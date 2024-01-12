@@ -22,13 +22,13 @@ builder.Services.AddScoped<DashboardConfigurator>((IServiceProvider serviceProvi
     DashboardConfigurator configurator = new DashboardConfigurator();
     configurator.SetConnectionStringsProvider(new DashboardConnectionStringsProvider(configuration));
 
-    DashboardFileStorage dashboardFileStorage = new DashboardFileStorage(fileProvider.GetFileInfo("Data/Dashboards").PhysicalPath);
+    IDashboardStorage dashboardFileStorage = new DashboardInMemoryStorage();
     configurator.SetDashboardStorage(dashboardFileStorage);
 
     DataSourceInMemoryStorage dataSourceStorage = new DataSourceInMemoryStorage();
 
     // Register an Entity Framework data source.������������
-    var connectionParameters = new EFConnectionParameters(typeof(OrdersContext));
+    var connectionParameters = new EFConnectionParameters(typeof(VMES.Database.Vmes.VmesDbContext));
     DashboardEFDataSource efDataSource = new DashboardEFDataSource("EF Data Source", "EF Data Connection", connectionParameters);
     dataSourceStorage.RegisterDataSource("efDataSource", efDataSource.SaveToXml());
 
@@ -37,7 +37,7 @@ builder.Services.AddScoped<DashboardConfigurator>((IServiceProvider serviceProvi
 
     return configurator;
 });
-builder.Services.AddDbContext<OrdersContext>(options => options.UseSqlite("Data Source=file:Data/nwind.db"), ServiceLifetime.Transient);
+builder.Services.AddDbContext<VMES.Database.Vmes.VmesDbContext>(options => options.UseSqlServer("Database=EvofeedVMES;Password=your_password;Server=localhost;TrustServerCertificate=True;User Id=sa;"), ServiceLifetime.Transient);
 var app = builder.Build();
 
 
