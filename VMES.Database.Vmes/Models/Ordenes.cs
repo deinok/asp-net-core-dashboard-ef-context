@@ -346,7 +346,7 @@ namespace VMES.Database.Vmes.Models
 		[InverseProperty(nameof(Models.StocksReserva.idOrdenNavigation))]
 		public virtual ICollection<StocksReserva> StocksReserva { get; set; } = new HashSet<StocksReserva>();
 
-		[InverseProperty(nameof(Models.Tarjetas.IdOrdenActualNavigation))]
+		[InverseProperty(nameof(Models.Tarjetas.OrdenActual))]
 		public virtual ICollection<Tarjetas> Tarjetas { get; set; } = new HashSet<Tarjetas>();
 
 		[InverseProperty(nameof(Models.Valores.OrdenNavigation))]

@@ -216,34 +216,34 @@ namespace VMES.Database.Vmes.Models
 		[InverseProperty(nameof(Medicaciones.SalidasLinias))]
 		public virtual Medicaciones MedicacionNavigation { get; set; }
 
-		[InverseProperty("idLineaSalidaNavigation")]
+		[InverseProperty(nameof(Models.LineaVentaLineaSalida.idLineaSalidaNavigation))]
 		public virtual ICollection<LineaVentaLineaSalida> LineaVentaLineaSalida { get; set; } = new HashSet<LineaVentaLineaSalida>();
 
-		[InverseProperty("LineaSalidaNavigation")]
+		[InverseProperty(nameof(Models.Ordenes.LineaSalidaNavigation))]
 		public virtual ICollection<Ordenes> Ordenes { get; set; } = new HashSet<Ordenes>();
 
-		[InverseProperty("idSalidaLineaNavigation")]
+		[InverseProperty(nameof(Models.Recetas.idSalidaLineaNavigation))]
 		public virtual ICollection<Recetas> Recetas { get; set; } = new HashSet<Recetas>();
 
-		[InverseProperty("idLineaSalidaNavigation")]
+		[InverseProperty(nameof(Models.SalidasLiniasLote.idLineaSalidaNavigation))]
 		public virtual ICollection<SalidasLiniasLote> SalidasLiniasLote { get; set; } = new HashSet<SalidasLiniasLote>();
 
-		[InverseProperty("idSalidaLiniaNavigation")]
+		[InverseProperty(nameof(Models.SalidasLiniasMedicaciones.idSalidaLiniaNavigation))]
 		public virtual ICollection<SalidasLiniasMedicaciones> SalidasLiniasMedicaciones { get; set; } = new HashSet<SalidasLiniasMedicaciones>();
 
-		[InverseProperty("idSalidasLineasNavigation")]
+		[InverseProperty(nameof(Models.SalidasLiniasMuestras.idSalidasLineasNavigation))]
 		public virtual ICollection<SalidasLiniasMuestras> SalidasLiniasMuestras { get; set; } = new HashSet<SalidasLiniasMuestras>();
 
-		[InverseProperty("idLineaSalidaNavigation")]
+		[InverseProperty(nameof(Models.SalidasLiniasPuntosDescarga.idLineaSalidaNavigation))]
 		public virtual ICollection<SalidasLiniasPuntosDescarga> SalidasLiniasPuntosDescarga { get; set; } = new HashSet<SalidasLiniasPuntosDescarga>();
 
-		[InverseProperty("idSalidasLineasNavigation")]
+		[InverseProperty(nameof(Models.Stocks.idSalidasLineasNavigation))]
 		public virtual ICollection<Stocks> Stocks { get; set; } = new HashSet<Stocks>();
 
-		[InverseProperty("idSalidasLineasNavigation")]
+		[InverseProperty(nameof(Models.StocksReserva.idSalidasLineasNavigation))]
 		public virtual ICollection<StocksReserva> StocksReserva { get; set; } = new HashSet<StocksReserva>();
 
-		[InverseProperty("IdLinSalidaNavigation")]
+		[InverseProperty(nameof(Models.Tarjetas.SalidaLinea))]
 		public virtual ICollection<Tarjetas> Tarjetas { get; set; } = new HashSet<Tarjetas>();
 
 	}

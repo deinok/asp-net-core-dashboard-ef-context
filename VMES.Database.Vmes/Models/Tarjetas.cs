@@ -25,11 +25,14 @@ namespace VMES.Database.Vmes.Models
 
 		public TarjetaStatus? Estado { get; set; }
 
-		public int? IdOrdenActual { get; set; }
+		[Column("IdOrdenActual")]
+		public int? OrdenActualId { get; set; }
 
-		public int? IdLinEntrada { get; set; }
+		[Column("IdLinEntrada")]
+		public int? EntradaLineaId { get; set; }
 
-		public int? IdLinSalida { get; set; }
+		[Column("IdLinSalida")]
+		public int? SalidaLineaId { get; set; }
 
 		public bool? PermisoArcosDesinfeccion { get; set; }
 
@@ -38,17 +41,17 @@ namespace VMES.Database.Vmes.Models
 		[StringLength(128)]
 		public string Referencia { get; set; }
 
-		[ForeignKey(nameof(IdLinEntrada))]
+		[ForeignKey(nameof(EntradaLineaId))]
 		[InverseProperty(nameof(EntradasLineas.Tarjetas))]
-		public virtual EntradasLineas IdLinEntradaNavigation { get; set; }
+		public virtual EntradasLineas EntradaLinea { get; set; }
 
-		[ForeignKey(nameof(IdLinSalida))]
+		[ForeignKey(nameof(SalidaLineaId))]
 		[InverseProperty(nameof(SalidasLinias.Tarjetas))]
-		public virtual SalidasLinias IdLinSalidaNavigation { get; set; }
+		public virtual SalidasLinias SalidaLinea { get; set; }
 
-		[ForeignKey(nameof(IdOrdenActual))]
+		[ForeignKey(nameof(OrdenActualId))]
 		[InverseProperty(nameof(Models.Ordenes.Tarjetas))]
-		public virtual Ordenes IdOrdenActualNavigation { get; set; }
+		public virtual Ordenes OrdenActual { get; set; }
 
 		[InverseProperty(nameof(Models.Choferes.TarjetaNavigation))]
 		public virtual ICollection<Choferes> Choferes { get; set; } = new HashSet<Choferes>();

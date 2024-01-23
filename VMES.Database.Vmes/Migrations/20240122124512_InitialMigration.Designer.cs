@@ -6,12 +6,13 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using VMES.Database.Vmes;
+using VMES.Database.Vmes.Models;
 
 namespace VMES.Database.Vmes.Migrations
 {
     [DbContext(typeof(VmesDbContext))]
-    [Migration("20230510143228_recetas_especies")]
-    partial class recetas_especies
+    [Migration("20240122124512_InitialMigration")]
+    partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -430,188 +431,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("Analisis");
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.AnalizadoresRed", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<decimal?>("Corriente0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Corriente1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Corriente2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Corriente_Neutro")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Corriente_trifasica")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("CosFi_Trifasico")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<string>("Descripcion")
-                        .HasColumnType("nvarchar(250)")
-                        .HasMaxLength(250);
-
-                    b.Property<decimal?>("Energia_Activa")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Activa_Generada")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Aparente")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Aparente_Generada")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Capacitiva_Generada")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Inductiva_Generada")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Reactiva_Capacitiva")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Energia_Reactiva_Inductiva")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("FactorPotencia0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("FactorPotencia1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("FactorPotencia2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("FactorPotencia_Trifasico")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Frecuencia")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<int?>("IdOpc")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("Max_Demanda")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Max_Demanda_L1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Max_Demanda_L2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Max_Demanda_L3")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<bool?>("ModoMaximetro")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Nombre")
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.Property<int?>("PosicionPLC")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("PotenciaActiva0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaActiva1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaActiva2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaActiva_Trifasica")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaAparente0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaAparente1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaAparente2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaAparente_Trifasica")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaCapacitativa_Trifasica")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaInductiva_Trifasica")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaReactiva0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaReactiva1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("PotenciaReactiva2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<bool?>("RegistrarDatos")
-                        .HasColumnType("bit");
-
-                    b.Property<decimal?>("SobreConsumo")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("THD_A0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("THD_A1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("THD_A2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("THD_V0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("THD_V1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("THD_V2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("Temperatura")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("TensionSimple0")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("TensionSimple1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("TensionSimple2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("VCompuestaL1_L2")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("VCompuestaL2_L3")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.Property<decimal?>("VCompuestaL3_L1")
-                        .HasColumnType("decimal(15, 5)");
-
-                    b.HasKey("id");
-
-                    b.ToTable("AnalizadoresRed");
-                });
-
             modelBuilder.Entity("VMES.Database.Vmes.Models.Audit", b =>
                 {
                     b.Property<int>("Id")
@@ -727,7 +546,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("Backups");
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.Basculas", b =>
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Bascula", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -790,7 +609,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("IdOpc")
                         .HasColumnType("int");
 
-                    b.Property<int?>("IdPlc")
+                    b.Property<int>("IdPlc")
                         .HasColumnName("PosicionPLC")
                         .HasColumnType("int");
 
@@ -829,7 +648,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("NuloTrama")
                         .HasColumnType("int");
 
-                    b.Property<int?>("OpcConfigId")
+                    b.Property<int>("OpcConfigId")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("PLCBCapacidadMaxima")
@@ -1220,9 +1039,6 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int")
                         .HasDefaultValueSql("((0))");
 
-                    b.Property<int?>("Tipo")
-                        .HasColumnType("int");
-
                     b.Property<decimal?>("ToleranciaInferior")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(8, 2)")
@@ -1232,6 +1048,10 @@ namespace VMES.Database.Vmes.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(8, 2)")
                         .HasDefaultValueSql("((0))");
+
+                    b.Property<int>("Type")
+                        .HasColumnName("Tipo")
+                        .HasColumnType("int");
 
                     b.Property<string>("ValidadoServidaOpc")
                         .HasColumnType("nvarchar(50)")
@@ -1251,6 +1071,8 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("Tag");
 
                     b.ToTable("Basculas");
+
+                    b.HasDiscriminator<int>("Type").HasValue(0);
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.BufferConsumidos", b =>
@@ -4145,6 +3967,57 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("BufferERPSolicitudRegularizacion");
                 });
 
+            modelBuilder.Entity("VMES.Database.Vmes.Models.BufferERPSolicitudTraspaso", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<decimal>("Cantidad")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("DestinoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaRespuesta")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaSolicitud")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LoteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrigenId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Respuesta")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TxtErrores")
+                        .HasColumnType("nvarchar(50)")
+                        .HasMaxLength(50);
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinoId");
+
+                    b.HasIndex("LoteId");
+
+                    b.HasIndex("OrigenId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("BufferERPSolicitudTraspaso");
+                });
+
             modelBuilder.Entity("VMES.Database.Vmes.Models.BufferERPStocks", b =>
                 {
                     b.Property<int>("Id")
@@ -4369,6 +4242,9 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int?>("BufferErpVentaId")
+                        .HasColumnType("int");
+
                     b.Property<decimal?>("Bultos")
                         .HasColumnType("numeric(18, 3)");
 
@@ -4441,6 +4317,8 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("id");
+
+                    b.HasIndex("BufferErpVentaId");
 
                     b.ToTable("BufferERPVentasLineas");
                 });
@@ -5016,10 +4894,10 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("Inhabilitado")
@@ -5269,7 +5147,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Fecha")
@@ -5278,7 +5156,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<DateTime?>("Fin")
                         .HasColumnType("datetime");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("Impresa")
@@ -5951,10 +5829,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Ubicacion")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("UdsEnvase")
-                        .HasColumnType("decimal(18, 5)")
-                        .HasComputedColumnSql("([dbo].[EnvasesDeStock]([Envase],[Cantidad]))");
-
                     b.Property<int?>("Unidad")
                         .HasColumnType("int");
 
@@ -6467,6 +6341,9 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("PosicionOperacionPLC")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PosicionTemperaturaPLC")
                         .HasColumnType("int");
 
                     b.Property<int?>("Prioridad")
@@ -7069,6 +6946,10 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("EstadoTransito")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Exportado")
+                        .HasColumnName("exportado")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("FFin")
                         .HasColumnType("datetime");
 
@@ -7084,6 +6965,9 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.Property<DateTime?>("FechaPrevista")
                         .HasColumnType("datetime");
+
+                    b.Property<bool>("Importado")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("LedControlDocumental")
                         .HasColumnType("int");
@@ -7133,11 +7017,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int>("Serie")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("exportado")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValueSql("((0))");
-
                     b.Property<int?>("idChofer")
                         .HasColumnType("int");
 
@@ -7166,9 +7045,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idTarjeta");
 
                     b.HasIndex("idVehiculo");
-
-                    b.HasIndex("id", "FechaCreacion", "FechaPrevista", "idVehiculo", "idChofer", "idProveedor", "idTarjeta", "EstadoTransito", "MatriculaCamion", "NombreConductor", "Observaciones", "idEmpresaTransporte", "LedControlDocumental", "MatriculaRemolque", "Precio", "FInicio", "Referencia", "ReferenciaCompra", "PreDesinfeccion", "PostDesinfeccion", "PreDesinfeccionOK", "PostDesinfeccionOK", "exportado", "Serie", "Numero", "FFin", "Estado")
-                        .HasName("IEntradas1");
 
                     b.ToTable("Entradas");
                 });
@@ -7288,6 +7164,10 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("EstadoTarjeta")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Exportado")
+                        .HasColumnName("exportado")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("Fecha")
                         .HasColumnType("datetime");
 
@@ -7305,6 +7185,9 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.Property<int?>("IdMuestra")
                         .HasColumnType("int");
+
+                    b.Property<bool>("Importado")
+                        .HasColumnType("bit");
 
                     b.Property<int?>("LedAnalisisLaboratorio")
                         .HasColumnType("int");
@@ -7384,9 +7267,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Unidad")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("exportado")
-                        .HasColumnType("bit");
-
                     b.Property<int?>("idBasculaPesajeBruto")
                         .HasColumnType("int");
 
@@ -7447,9 +7327,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idProducto");
 
                     b.HasIndex("idProveedor");
-
-                    b.HasIndex("id", "idProducto", "CantidadPedida", "FechaInicioRecepcion", "FechaFinRecepcion", "PesoBruto", "Cajon1", "Cajon2", "Cajon3", "Cajon4", "Cajon5", "Cajon6", "Cajon7", "Cajon8", "Cajon9", "Cajon10", "TransitoActivo", "idBasculaPesajeBruto", "idBasculaPesajeNeto", "EntradaManualPesos", "Estado", "FueraCajon", "idProveedor", "LedControlDocumental", "LedAnalisisLaboratorio", "LedAutorizacion", "LedCargaProducto", "LedDevolucionTarjeta", "Lote", "Tara", "PesoNetoManual", "RecogerPesoEnBascula", "Unidad", "Destino1", "Destino2", "Destino3", "Destino4", "Formato", "Envase", "Bultos", "Observaciones", "Precio", "PagarKgTeoricos", "CampoLibre1", "CampoLIbre2", "Fecha", "idModulo", "Autorizada", "EstadoTarjeta", "exportado", "ErrorExport", "CamionBanera", "TipoOrigen", "Origen1", "Origen2", "Origen3", "Origen4", "NetoOrigen", "NumLineaCompra", "idEntradas")
-                        .HasName("IEntradasLineas");
 
                     b.ToTable("EntradasLineas");
                 });
@@ -8187,24 +8064,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("Formulas");
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.FormulasDatosExtra", b =>
-                {
-                    b.Property<int>("id")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("KWToneladaEfectivo")
-                        .HasColumnType("decimal(18, 4)")
-                        .HasComputedColumnSql("([dbo].[FormulaKWToneladaEfectivo]([id]))");
-
-                    b.Property<decimal?>("KWToneladaTotal")
-                        .HasColumnType("decimal(18, 4)")
-                        .HasComputedColumnSql("([dbo].[FormulaKWToneladaTotal]([id]))");
-
-                    b.HasKey("id");
-
-                    b.ToTable("FormulasDatosExtra");
-                });
-
             modelBuilder.Entity("VMES.Database.Vmes.Models.GMAO_Archivos", b =>
                 {
                     b.Property<int>("Id")
@@ -8623,6 +8482,9 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
 
+                    b.Property<Guid?>("ReviewTaskId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int?>("idProveedor")
                         .HasColumnType("int");
 
@@ -8631,6 +8493,8 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("IdIntervencion");
 
                     b.HasIndex("IdOperario");
+
+                    b.HasIndex("ReviewTaskId");
 
                     b.ToTable("GMAO_ElemIntervencionesTrabajos");
                 });
@@ -8722,6 +8586,58 @@ namespace VMES.Database.Vmes.Migrations
                         .HasName("PK__GMAO_Ele__A429721ACB3DB9FF");
 
                     b.ToTable("GMAO_ElementReviewSettings");
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.GMAO_ElementReviewTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
+
+                    b.Property<int>("Counter")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int>("ElementId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("ResetDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Threshold")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("TriggerType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElementId");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("GMAO_ElementReviewTasks");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.GMAO_Elementos", b =>
@@ -9342,6 +9258,31 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("GruposIncompatibilidadesLineas");
                 });
 
+            modelBuilder.Entity("VMES.Database.Vmes.Models.HumanMachineInterface", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(64)")
+                        .HasMaxLength(64);
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HumanMachineInterfaces");
+
+                    b.HasDiscriminator<byte>("Type").HasValue((byte)0);
+                });
+
             modelBuilder.Entity("VMES.Database.Vmes.Models.Incompatibilidades", b =>
                 {
                     b.Property<int>("Id")
@@ -9425,6 +9366,9 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<byte[]>("DatosInforme")
                         .HasColumnType("varbinary(max)");
 
+                    b.Property<Guid?>("DefaultPrinterId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("FechaUltima")
                         .HasColumnType("datetime");
 
@@ -9472,6 +9416,8 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DefaultPrinterId");
+
                     b.HasIndex("IdCategoria");
 
                     b.HasIndex("IdInformeBase");
@@ -9515,6 +9461,9 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<Guid?>("DefaultPrinterId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool?>("Habilitado")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -9546,6 +9495,8 @@ namespace VMES.Database.Vmes.Migrations
                         .HasDefaultValueSql("((1))");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DefaultPrinterId");
 
                     b.HasIndex("IdInforme");
 
@@ -9865,7 +9816,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Fabricacion")
@@ -9883,7 +9834,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("IdProveedor")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Inicio")
@@ -10085,6 +10036,10 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Duracion")
                         .HasColumnType("int");
 
+                    b.Property<string>("Edad")
+                        .HasColumnType("nvarchar(120)")
+                        .HasMaxLength(120);
+
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
@@ -10092,7 +10047,7 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Fecha")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("Frecuencia")
                         .HasColumnType("int");
@@ -10589,8 +10544,6 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EstadoForzado");
-
                     b.HasIndex("FamiliaMedidor");
 
                     b.HasIndex("IdBascula");
@@ -10750,10 +10703,10 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<bool?>("ComprobarPlantilla")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("ConDestinos")
+                    b.Property<bool>("ConDestinos")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("ConOrigenes")
+                    b.Property<bool>("ConOrigenes")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("Confirmar")
@@ -11149,6 +11102,12 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<bool?>("PermitirOrdenesLimpieza")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("PermitirPausar")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PermitirReanudar")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("PermitirResetear")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -11323,8 +11282,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Departamento");
-
-                    b.HasIndex("EstadoForzado");
 
                     b.HasIndex("ModuloAsociadoOrdenes1");
 
@@ -12130,6 +12087,9 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("PesadaNum")
                         .HasColumnType("int");
 
+                    b.Property<bool>("PostEnvioProcesada")
+                        .HasColumnType("bit");
+
                     b.Property<bool?>("RequiereRespuesta")
                         .HasColumnType("bit");
 
@@ -12273,8 +12233,6 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("IdGrupo");
 
-                    b.HasIndex("IdModulo");
-
                     b.HasIndex("IdOrigen");
 
                     b.HasIndex("IdOrigenPropuesto");
@@ -12287,8 +12245,7 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("RespIdProducto");
 
-                    b.HasIndex("Respondido")
-                        .HasName("_dta_index_NetAlarmas_2");
+                    b.HasIndex("Respondido");
 
                     b.HasIndex("Respuesta");
 
@@ -12300,14 +12257,7 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("idUbicacion");
 
-                    b.HasIndex("Id", "IdPlc", "idOrden", "idDosificacion", "idMedidor", "IdModulo", "TextoOpcional", "IdError", "FechaRecibido", "Respuesta", "RespPC", "RespUsuario", "RespFecha", "RespTxt", "txtError", "Opcion1", "Opcion2", "Opcion4", "Opcion3", "Tratada", "Visualizada", "idUbicacion", "Finalizada", "IdSeccion", "IdGrupo", "Ciclo_Num", "IdOrigen", "IdDestino", "IdOrigenPropuesto", "IdDestinoPropuesto", "Ciclo_NumPropuesto", "ConsultarScada", "InfoAdicScada", "ArgumentoPropuesto", "Enviada", "TextoAdicional", "FechaErrorMilisegundos", "RespIdOrigen", "RespIdDestino", "RespNumCiclos", "RespIdOrden", "RespArgumentos0", "RespArgumentos1", "RespArgumentos2", "RespArgumentos3", "RespVariables0", "RespVariables1", "RespVariables2", "RespVariables3", "RespVariables4", "RespIdProducto", "RespIdLote", "Interno", "TipoInterno", "PesadaNum", "Deshabilitada", "InfoAdicional1", "InfoAdicional2", "InfoAdicional3", "InfoAdicional4", "InfoAdicional5", "Respondido", "MostrarAUsuario", "RequiereRespuesta", "FechaError")
-                        .HasName("_dta_index_NetAlarmas_1");
-
-                    b.HasIndex("IdPlc", "idDosificacion", "idMedidor", "IdModulo", "TextoOpcional", "IdError", "FechaError", "FechaRecibido", "Respuesta", "RespPC", "RespUsuario", "RespFecha", "RespTxt", "txtError", "Opcion1", "Opcion2", "Opcion4", "Opcion3", "Tratada", "Visualizada", "idUbicacion", "Finalizada", "IdSeccion", "IdGrupo", "Ciclo_Num", "IdOrigen", "IdDestino", "IdOrigenPropuesto", "IdDestinoPropuesto", "Ciclo_NumPropuesto", "RequiereRespuesta", "ConsultarScada", "InfoAdicScada", "ArgumentoPropuesto", "Enviada", "TextoAdicional", "FechaErrorMilisegundos", "Respondido", "RespIdOrigen", "RespIdDestino", "RespNumCiclos", "RespIdOrden", "RespArgumentos0", "RespArgumentos1", "RespArgumentos2", "RespArgumentos3", "RespVariables0", "RespVariables1", "RespVariables2", "RespVariables3", "RespVariables4", "RespIdProducto", "RespIdLote", "Interno", "TipoInterno", "PesadaNum", "MostrarAUsuario", "Deshabilitada", "InfoAdicional1", "InfoAdicional2", "InfoAdicional3", "InfoAdicional4", "InfoAdicional5", "FechaErrorMES", "idOrden", "Id")
-                        .HasName("IndexNetAlarmas_1");
-
-                    b.HasIndex("IdPlc", "idOrden", "idDosificacion", "idMedidor", "IdModulo", "TextoOpcional", "IdError", "FechaRecibido", "Respuesta", "RespPC", "RespUsuario", "RespFecha", "RespTxt", "txtError", "Opcion1", "Opcion2", "Opcion4", "Opcion3", "Tratada", "Visualizada", "idUbicacion", "Finalizada", "IdSeccion", "IdGrupo", "Ciclo_Num", "IdOrigen", "IdDestino", "IdOrigenPropuesto", "IdDestinoPropuesto", "Ciclo_NumPropuesto", "ConsultarScada", "InfoAdicScada", "ArgumentoPropuesto", "Enviada", "TextoAdicional", "FechaErrorMilisegundos", "RespIdOrigen", "RespIdDestino", "RespNumCiclos", "RespIdOrden", "RespArgumentos0", "RespArgumentos1", "RespArgumentos2", "RespArgumentos3", "RespVariables0", "RespVariables1", "RespVariables2", "RespVariables3", "RespVariables4", "RespIdProducto", "RespIdLote", "Interno", "TipoInterno", "PesadaNum", "Deshabilitada", "InfoAdicional1", "InfoAdicional2", "InfoAdicional3", "InfoAdicional4", "InfoAdicional5", "FechaErrorMES", "idMotor", "MostrarAUsuario", "RequiereRespuesta", "Respondido", "FechaError", "Id")
-                        .HasName("INetAlarmas1");
+                    b.HasIndex("IdModulo", "Enviada", "PostEnvioProcesada");
 
                     b.ToTable("NetAlarmas");
                 });
@@ -12692,195 +12642,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idTipo");
 
                     b.ToTable("NetAlarmasTiposRespuestas");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstados", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int?>("Estado")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("FFinal")
-                        .HasColumnType("datetime");
-
-                    b.Property<DateTime?>("FInicio")
-                        .HasColumnType("datetime");
-
-                    b.Property<int?>("IdAlarmaActual")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdMedidor")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdModulo")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdOrdenActual")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdTurno")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("OperarioId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("VentanaSegs")
-                        .HasColumnType("int");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("Estado");
-
-                    b.HasIndex("IdAlarmaActual");
-
-                    b.HasIndex("IdMedidor");
-
-                    b.HasIndex("IdModulo");
-
-                    b.HasIndex("IdOrdenActual");
-
-                    b.HasIndex("IdTurno");
-
-                    b.HasIndex("OperarioId");
-
-                    b.HasIndex("id", "IdMedidor", "Estado", "FInicio", "FFinal", "VentanaSegs", "OperarioId", "IdTurno", "IdAlarmaActual", "IdOrdenActual", "IdModulo")
-                        .HasName("_dta_index_OEEEstados_6_140579589__K2_1_3_4_5_6_7_8_9_10_11");
-
-                    b.ToTable("OEEEstados");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosMedidores", b =>
-                {
-                    b.Property<int>("idEstadoTipo")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idMedidor")
-                        .HasColumnType("int");
-
-                    b.HasKey("idEstadoTipo", "idMedidor");
-
-                    b.HasIndex("idMedidor");
-
-                    b.ToTable("OEEEstadosMedidores");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosModulos", b =>
-                {
-                    b.Property<int>("idEstadoTipo")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idModulo")
-                        .HasColumnType("int");
-
-                    b.HasKey("idEstadoTipo", "idModulo");
-
-                    b.HasIndex("idModulo");
-
-                    b.ToTable("OEEEstadosModulos");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosTipo", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Descripcion")
-                        .HasColumnType("nvarchar(250)")
-                        .HasMaxLength(250);
-
-                    b.Property<bool?>("EstadoAveria")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("EstadoAveriaGrave")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("EstadoEnHorario")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("EstadoMantenimiento")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("EstadoProduciendo")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Nombre")
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.Property<int?>("Tipo")
-                        .HasColumnType("int");
-
-                    b.HasKey("id");
-
-                    b.ToTable("OEEEstadosTipo");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosTipoLista", b =>
-                {
-                    b.Property<int>("IdEstadoTipo")
-                        .HasColumnType("int");
-
-                    b.Property<int>("IdEstadoEnum")
-                        .HasColumnType("int");
-
-                    b.HasKey("IdEstadoTipo", "IdEstadoEnum");
-
-                    b.ToTable("OEEEstadosTipoLista");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEHorarios", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<bool>("Domingo")
-                        .HasColumnType("bit");
-
-                    b.Property<TimeSpan>("HoraFin")
-                        .HasColumnType("time");
-
-                    b.Property<TimeSpan>("HoraInicio")
-                        .HasColumnType("time");
-
-                    b.Property<bool>("Jueves")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Lunes")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Martes")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Miercoles")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Sabado")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("Viernes")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("idMedidor")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("idModulo")
-                        .HasColumnType("int");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("idMedidor");
-
-                    b.HasIndex("idModulo");
-
-                    b.ToTable("OEEHorarios");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.OpcConfig", b =>
@@ -13426,7 +13187,7 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("nvarchar(250)")
                         .HasMaxLength(250);
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Fecha")
@@ -13468,7 +13229,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<bool>("IgnorarProducidos")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("IncompatComprobada")
@@ -13666,6 +13427,9 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<float?>("Velocidad")
                         .HasColumnType("real");
 
+                    b.Property<int?>("VentaLineaId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Version")
                         .HasColumnType("int");
 
@@ -13691,6 +13455,8 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("Formula");
 
+                    b.HasIndex("IdCab");
+
                     b.HasIndex("IdVehiculo");
 
                     b.HasIndex("LineaEntrada");
@@ -13701,12 +13467,11 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("Medicacion");
 
-                    b.HasIndex("Medicada")
-                        .HasName("_dta_index_Ordenes_3");
-
                     b.HasIndex("Modulo");
 
                     b.HasIndex("ProductoDestino");
+
+                    b.HasIndex("VentaLineaId");
 
                     b.HasIndex("Version");
 
@@ -13715,21 +13480,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idChofer");
 
                     b.HasIndex("idTarjeta");
-
-                    b.HasIndex("Estado", "Fin")
-                        .HasName("iOrdenes_estado_ffin");
-
-                    b.HasIndex("IdCab", "Serie", "Id", "Nombre", "Departamento", "Modulo", "Cantidad", "Fecha", "Servida", "Inicio", "Fin", "Formula", "NumeroCiclos", "ContadorCiclos", "Exportado", "LoteNombre", "FormulaFecha", "ProductoDestino", "LoteDestino", "TipoFinalizacion", "Tiempo", "Velocidad", "Ganancia", "GananciaUnidad", "EnvaseOrigen", "BultosOrigen", "Modificada", "Receta", "Medicacion", "Version", "Confirmada", "SerieSalida", "Salida", "LineaSalida", "SerieEntrada", "Entrada", "LineaEntrada", "SeriePlanificacion", "Planificacion", "Importado", "LineaVenta", "OrdenAscendiente", "SerieOrdenAscendiente", "SerieOrdenRelacionada", "OrdenRelacionada", "Medicada", "idChofer", "idTarjeta", "Editada", "idOld", "SerieOld", "IniciarOrden", "Caminos", "FechaEnvioAPlc", "Bloqueada", "ViajeSalida", "SerieViajeSalida", "OrdenEnvioPLC", "Estado")
-                        .HasName("_dta_index_Ordenes_1");
-
-                    b.HasIndex("Serie", "Id", "Nombre", "Departamento", "Modulo", "Cantidad", "Fecha", "Estado", "Servida", "Inicio", "Fin", "Formula", "NumeroCiclos", "ContadorCiclos", "Exportado", "LoteNombre", "FormulaFecha", "ProductoDestino", "LoteDestino", "TipoFinalizacion", "Tiempo", "Velocidad", "Ganancia", "GananciaUnidad", "EnvaseOrigen", "BultosOrigen", "Modificada", "Receta", "Medicacion", "Version", "Confirmada", "SerieSalida", "Salida", "LineaSalida", "SerieEntrada", "Entrada", "LineaEntrada", "SeriePlanificacion", "Planificacion", "Importado", "LineaVenta", "OrdenAscendiente", "SerieOrdenAscendiente", "SerieOrdenRelacionada", "OrdenRelacionada", "Medicada", "idChofer", "idTarjeta", "Editada", "idOld", "SerieOld", "IniciarOrden", "OrdenEnvioPLC", "Caminos", "FechaEnvioAPlc", "Bloqueada", "ViajeSalida", "SerieViajeSalida", "IdCab")
-                        .HasName("_dta_index_Ordenes_2");
-
-                    b.HasIndex("Serie", "Nombre", "Departamento", "Modulo", "Cantidad", "Fecha", "Estado", "Servida", "Inicio", "Fin", "Formula", "NumeroCiclos", "ContadorCiclos", "Exportado", "LoteNombre", "FormulaFecha", "ProductoDestino", "LoteDestino", "TipoFinalizacion", "Tiempo", "Velocidad", "Ganancia", "GananciaUnidad", "EnvaseOrigen", "BultosOrigen", "Modificada", "Receta", "Medicacion", "Version", "Confirmada", "SerieSalida", "Salida", "LineaSalida", "SerieEntrada", "Entrada", "LineaEntrada", "SeriePlanificacion", "Planificacion", "Importado", "LineaVenta", "OrdenAscendiente", "SerieOrdenAscendiente", "SerieOrdenRelacionada", "OrdenRelacionada", "Medicada", "idChofer", "idTarjeta", "Editada", "idOld", "SerieOld", "IniciarOrden", "OrdenEnvioPLC", "Caminos", "FechaEnvioAPlc", "Bloqueada", "ViajeSalida", "SerieViajeSalida", "NombreChofer", "Matricula", "Remolque", "IdVehiculo", "RefERP", "SegundosCicloTeorico", "DatosOptimizados", "IncompatComprobada", "IncompatFlexible", "IncompatEstricta", "IncompatInfo", "TiempoPrevistoCicloSegs", "IdCab", "Id")
-                        .HasName("IndexOrdenes_1");
-
-                    b.HasIndex("IdCab", "Serie", "Id", "Nombre", "Departamento", "Cantidad", "Fecha", "Servida", "Inicio", "Fin", "Formula", "NumeroCiclos", "ContadorCiclos", "Exportado", "LoteNombre", "FormulaFecha", "ProductoDestino", "LoteDestino", "TipoFinalizacion", "Tiempo", "Velocidad", "Ganancia", "GananciaUnidad", "EnvaseOrigen", "BultosOrigen", "Modificada", "Receta", "Medicacion", "Version", "Confirmada", "SerieSalida", "Salida", "LineaSalida", "SerieEntrada", "Entrada", "LineaEntrada", "SeriePlanificacion", "Planificacion", "Importado", "LineaVenta", "OrdenAscendiente", "SerieOrdenAscendiente", "SerieOrdenRelacionada", "OrdenRelacionada", "Medicada", "idChofer", "idTarjeta", "Editada", "idOld", "SerieOld", "IniciarOrden", "OrdenEnvioPLC", "Caminos", "FechaEnvioAPlc", "ViajeSalida", "SerieViajeSalida", "NombreChofer", "Matricula", "Remolque", "IdVehiculo", "RefERP", "SegundosCicloTeorico", "DatosOptimizados", "IncompatComprobada", "IncompatFlexible", "IncompatEstricta", "IncompatInfo", "TiempoPrevistoCicloSegs", "FechaInicioPrevista", "NecesitaOrigen", "Fexportado", "ExportError", "TotalCiclosReal", "RefERP1", "RefERP2", "RefERP3", "Modulo", "Estado", "Bloqueada")
-                        .HasName("IndOrdenes_ModuloEstadoBloqueada");
 
                     b.ToTable("Ordenes");
                 });
@@ -13833,6 +13583,44 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idOrdenPadre");
 
                     b.ToTable("OrdenesRelacion");
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.OrdenesTransicionEstadosHistory", b =>
+                {
+                    b.Property<int>("IdAuto")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<int>("ContadorActualizaciones")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EstadoAnterior")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ExportadoERP")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FinValidez")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("InicioValidez")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<int?>("OrdenId")
+                        .HasColumnName("IdOrden")
+                        .HasColumnType("int");
+
+                    b.HasKey("IdAuto");
+
+                    b.HasIndex("OrdenId");
+
+                    b.ToTable("OrdenesTransicionEstadosHistory");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Origenes", b =>
@@ -13943,126 +13731,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("Ubicacion");
 
                     b.ToTable("Origenes");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.PLCAddons", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Descripción")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.Property<int>("Tipo")
-                        .HasColumnType("int");
-
-                    b.HasKey("id");
-
-                    b.ToTable("PLCAddons");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.PLCAddonsVars", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Descripcion")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.Property<int>("Tipo")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("idAddon")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("subscribir")
-                        .HasColumnType("bit");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("idAddon");
-
-                    b.ToTable("PLCAddonsVars");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.PLCRead", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.Property<DateTime?>("UltimaLectura")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime")
-                        .HasDefaultValueSql("(getdate())");
-
-                    b.Property<string>("Valor")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
-
-                    b.Property<int>("posicion")
-                        .HasColumnType("int");
-
-                    b.HasKey("id");
-
-                    b.HasIndex("Nombre")
-                        .HasName("IX_PLCRead");
-
-                    b.ToTable("PLCRead");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.PLCWrite", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int>("Estado")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("FechaEnviado")
-                        .HasColumnType("datetime");
-
-                    b.Property<DateTime?>("FechaWrite")
-                        .HasColumnType("datetime");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.Property<string>("Valor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
-
-                    b.HasKey("id");
-
-                    b.ToTable("PLCWrite");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Paises", b =>
@@ -14195,6 +13863,56 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("Pivots");
                 });
 
+            modelBuilder.Entity("VMES.Database.Vmes.Models.PrintJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("Copies")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PrinterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrinterId");
+
+                    b.ToTable("PrintJobs");
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Printer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(64)")
+                        .HasMaxLength(64);
+
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Printers");
+
+                    b.HasDiscriminator<byte>("Type").HasValue((byte)0);
+                });
+
             modelBuilder.Entity("VMES.Database.Vmes.Models.ProductoEnvaseEtiqueta", b =>
                 {
                     b.Property<int>("ProductoId")
@@ -14216,6 +13934,51 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("EnvaseId");
 
                     b.ToTable("ProductosEnvasesEtiquetas");
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.ProductoMedidorCamino", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CaminoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime>("FechaEdicion")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("MedidorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.Property<byte>("Type")
+                        .HasColumnName("Tipo")
+                        .HasColumnType("tinyint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedidorId");
+
+                    b.HasIndex("ProductoId");
+
+                    b.HasIndex("CaminoId", "MedidorId", "ProductoId")
+                        .IsUnique();
+
+                    b.ToTable("ProductoMedidorCamino");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Productos", b =>
@@ -14286,7 +14049,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("EtiquetaSacos")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<int?>("Familia")
@@ -14304,7 +14067,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<float?>("Humedad")
                         .HasColumnType("real");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("Inhabilitado")
@@ -14332,6 +14095,15 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<string>("NombreAMostrarEnEtiqueta")
                         .HasColumnType("nvarchar(254)")
                         .HasMaxLength(254);
+
+                    b.Property<string>("NombreComercial")
+                        .HasColumnName("Referencia2")
+                        .HasColumnType("nvarchar(20)")
+                        .HasMaxLength(20);
+
+                    b.Property<string>("NombreScada")
+                        .HasColumnType("nvarchar(20)")
+                        .HasMaxLength(20);
 
                     b.Property<string>("NumeroRegistro")
                         .HasColumnType("nvarchar(50)")
@@ -14393,10 +14165,6 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Referencia")
-                        .HasColumnType("nvarchar(20)")
-                        .HasMaxLength(20);
-
-                    b.Property<string>("Referencia2")
                         .HasColumnType("nvarchar(20)")
                         .HasMaxLength(20);
 
@@ -14486,9 +14254,6 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("Unidad");
 
-                    b.HasIndex("Id", "Nombre", "Familia", "Densidad", "Unidad", "Tipo", "Stock", "ControlStock", "Dosificable", "Automatico", "TipoDosificacion", "Formato", "Envase", "Referencia", "Referencia2", "Importado", "Humedad", "PesoEspecifico", "Entradas", "Muestras", "EtiquetaGranel", "EtiquetaSacos", "EtiquetaMuestras", "EtiquetaControl", "Formula", "Analisi", "NumeroRegistro", "Inhabilitado", "Caducidad", "Refrescado", "Receptable", "Exportado", "Medicamento", "AplicacionDirecta", "Modulo", "FamiliaMedidor", "Afeccion", "PrecioCompra", "PrecioVenta", "PrecioMedioCompra", "StockMinimo", "Bloqueado", "TiempoEspera", "TipoIva", "PrecioCompraMedio", "PrecioCompraUltimo", "Estado", "EtiquetaEntradas", "ViaAdministracion", "MostrarEnEtiqueta", "NombreAMostrarEnEtiqueta", "idOld", "ToleranciaSuperior", "ToleranciaInferior", "PausaPosteriorDosificacion", "DesviacionMaxima", "PlantillaCabCargaPiquera", "TipoPR", "PlantillaCabProduccion", "PlantillaCabCargaPiquera2", "PlantillaCabSecadero", "EAN13", "Medidor")
-                        .HasName("IProductos1");
-
                     b.ToTable("Productos");
                 });
 
@@ -14560,10 +14325,10 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<bool?>("Inhabilitado")
@@ -15248,7 +15013,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("FFin")
@@ -15265,6 +15030,9 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.Property<int?>("IdDepartamento")
                         .HasColumnType("int");
+
+                    b.Property<bool>("Importado")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Observaciones")
                         .HasColumnType("nvarchar(max)");
@@ -15403,7 +15171,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("EstadoTarjeta")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Fecha")
@@ -15416,6 +15184,9 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("datetime");
 
                     b.Property<bool?>("FueraCajon")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<int?>("LedAnalisisLaboratorio")
@@ -15434,6 +15205,9 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("LedViajeAsignado")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MedicacionId")
                         .HasColumnType("int");
 
                     b.Property<string>("Observaciones")
@@ -15521,6 +15295,8 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasKey("id");
 
+                    b.HasIndex("MedicacionId");
+
                     b.HasIndex("Origen1");
 
                     b.HasIndex("Origen2");
@@ -15552,9 +15328,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idmodulo");
 
                     b.HasIndex("idviajes");
-
-                    b.HasIndex("id", "idSalidas", "idProducto", "idFormato", "idEnvase", "idUnidad", "idDomicilio", "Origen1", "Origen2", "Origen3", "Origen4", "FueraCajon", "Cajon1", "Cajon2", "Cajon3", "Cajon4", "Cajon5", "Cajon6", "Cajon7", "Cajon8", "Cajon9", "Cajon10", "FechaFinCarga", "FechaInicioCarga", "Bultos", "Bruto", "Tara", "Estado", "PrecioUnidad", "Cantidad", "LedControlDocumental", "LedAnalisisLaboratorio", "LedAutorizacion", "LedCargaProducto", "LedDevolucionTarjeta", "idorden", "TransitoActivo", "idmodulo", "Fecha", "Precio", "PrecioTransporte", "EstadoTarjeta", "Observaciones", "Autorizada", "idBasculaPesajeNeto", "idBasculaPesajeBruto", "PesoNetoManual", "CampoLibre1", "CampoLibre2", "LedViajeAsignado", "idPuntoDescarga", "Exportado", "ErrorExportacion", "idAlbaran", "TipoOrigen", "CamionBanera", "VaciarSilos", "RefPedidoERP", "idviajes")
-                        .HasName("ISalidasLinias1");
 
                     b.ToTable("SalidasLinias");
                 });
@@ -15603,25 +15376,28 @@ namespace VMES.Database.Vmes.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<decimal?>("Bultos")
-                        .HasColumnType("numeric(18, 3)");
+                        .HasColumnType("decimal(18, 2)");
 
-                    b.Property<decimal?>("Cantidad")
-                        .HasColumnType("numeric(18, 3)");
+                    b.Property<decimal>("Cantidad")
+                        .HasColumnType("decimal(18, 3)");
 
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("Fecha")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
-                    b.Property<int?>("IdUnidad")
+                    b.Property<int>("IdUnidad")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("Precio")
-                        .HasColumnType("numeric(18, 6)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal?>("PrecioUnidad")
-                        .HasColumnType("numeric(18, 6)");
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("idEnvase")
                         .HasColumnType("int");
@@ -15629,24 +15405,21 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("idFormato")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idMedicamento")
-                        .HasColumnType("int");
-
                     b.Property<int?>("idOrigen")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idSalidaLinia")
+                    b.Property<int>("idSalidaLinia")
                         .HasColumnType("int");
 
                     b.HasKey("id");
 
                     b.HasIndex("IdUnidad");
 
+                    b.HasIndex("ProductoId");
+
                     b.HasIndex("idEnvase");
 
                     b.HasIndex("idFormato");
-
-                    b.HasIndex("idMedicamento");
 
                     b.HasIndex("idOrigen");
 
@@ -15760,7 +15533,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("EstadoTransito")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("FFinViaje")
@@ -15780,6 +15553,9 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.Property<DateTime?>("FechaPrevista")
                         .HasColumnType("datetime");
+
+                    b.Property<bool>("Importado")
+                        .HasColumnType("bit");
 
                     b.Property<string>("MatriculaCamion")
                         .HasColumnType("nvarchar(15)")
@@ -15940,47 +15716,61 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<int?>("ContadorAlbaranes")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ContadorCertificadoDesinfeccion")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ContadorCompras")
+                    b.Property<int>("ContadorAlbaranes")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValueSql("((0))");
 
-                    b.Property<int?>("ContadorEntradas")
-                        .HasColumnType("int");
+                    b.Property<int>("ContadorCertificadoDesinfeccion")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
 
-                    b.Property<int?>("ContadorOrdenes")
-                        .HasColumnType("int");
+                    b.Property<int>("ContadorCompras")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
 
-                    b.Property<int?>("ContadorRecetas")
-                        .HasColumnType("int");
+                    b.Property<int>("ContadorEntradas")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
 
-                    b.Property<int?>("ContadorSalidas")
-                        .HasColumnType("int");
+                    b.Property<int>("ContadorOrdenes")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
 
-                    b.Property<int?>("ContadorVentas")
+                    b.Property<int>("ContadorRecetas")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
+
+                    b.Property<int>("ContadorSalidas")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
+
+                    b.Property<int>("ContadorVentas")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValueSql("((0))");
 
                     b.Property<int>("ContadorViajes")
-                        .HasColumnType("int");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((0))");
 
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("Fecha")
                         .HasColumnType("datetime");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
                     b.Property<string>("Nombre")
@@ -16249,22 +16039,22 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Exportado")
+                    b.Property<bool>("Exportado")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("Fecha")
-                        .HasColumnType("datetime");
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaERP")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("Formato")
                         .HasColumnType("int");
 
-                    b.Property<bool?>("Importado")
+                    b.Property<bool>("Importado")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("Lote")
+                    b.Property<int>("Lote")
                         .HasColumnType("int");
 
                     b.Property<string>("Observaciones")
@@ -16277,15 +16067,8 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<bool?>("Procesando")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("Producto")
+                    b.Property<int>("Ubicacion")
                         .HasColumnType("int");
-
-                    b.Property<int?>("Ubicacion")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("UdsEnvase")
-                        .HasColumnType("decimal(18, 5)")
-                        .HasComputedColumnSql("([dbo].[EnvasesDeStock]([envase],[Cantidad]))");
 
                     b.Property<int?>("Unidad")
                         .HasColumnType("int");
@@ -16314,15 +16097,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idEntradasLineas");
 
                     b.HasIndex("idSalidasLineas");
-
-                    b.HasIndex("Ubicacion", "Cantidad", "Estado")
-                        .HasName("I_StocksUbis");
-
-                    b.HasIndex("Lote", "Fecha", "Ubicacion", "Estado")
-                        .HasName("IX_Stocks_Ubicacion_Estado");
-
-                    b.HasIndex("Producto", "Formato", "Lote", "Envase", "Cantidad", "Unidad", "Fecha", "Estado", "Importado", "Exportado", "Palet", "Procesando", "Observaciones", "idOld", "idEntradasLineas", "idSalidasLineas", "Ubicacion", "Id")
-                        .HasName("IStocks1");
 
                     b.ToTable("Stocks");
                 });
@@ -16766,20 +16540,15 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int?>("EntradaLineaId")
+                        .HasColumnName("IdLinEntrada")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
                     b.Property<bool?>("Exportado")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("IdLinEntrada")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdLinSalida")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdOrdenActual")
-                        .HasColumnType("int");
 
                     b.Property<bool?>("Importado")
                         .HasColumnType("bit");
@@ -16788,11 +16557,23 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
 
+                    b.Property<int?>("OrdenActualId")
+                        .HasColumnName("IdOrdenActual")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Ordenacion")
                         .HasColumnType("int");
 
                     b.Property<bool?>("PermisoArcosDesinfeccion")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Referencia")
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
+
+                    b.Property<int?>("SalidaLineaId")
+                        .HasColumnName("IdLinSalida")
+                        .HasColumnType("int");
 
                     b.Property<string>("Valor")
                         .HasColumnType("nvarchar(50)")
@@ -16803,11 +16584,11 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdLinEntrada");
+                    b.HasIndex("EntradaLineaId");
 
-                    b.HasIndex("IdLinSalida");
+                    b.HasIndex("OrdenActualId");
 
-                    b.HasIndex("IdOrdenActual");
+                    b.HasIndex("SalidaLineaId");
 
                     b.ToTable("Tarjetas");
                 });
@@ -17018,28 +16799,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("TiposIva");
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.Turnos", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<TimeSpan?>("HoraFinal")
-                        .HasColumnType("time");
-
-                    b.Property<TimeSpan?>("HoraInicio")
-                        .HasColumnType("time");
-
-                    b.Property<string>("Nombre")
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
-
-                    b.HasKey("id");
-
-                    b.ToTable("Turnos");
-                });
-
             modelBuilder.Entity("VMES.Database.Vmes.Models.Ubicaciones", b =>
                 {
                     b.Property<int>("Id")
@@ -17215,11 +16974,6 @@ namespace VMES.Database.Vmes.Migrations
                         .HasDefaultValueSql("((0))");
 
                     b.Property<int?>("MaPTiempoRegistros")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValueSql("((1))");
-
-                    b.Property<int?>("MaPTipo")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValueSql("((1))");
@@ -17443,6 +17197,12 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<bool?>("TipoPR")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("Type")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnName("MaPTipo")
+                        .HasColumnType("int")
+                        .HasDefaultValueSql("((1))");
+
                     b.Property<int?>("Unidad")
                         .HasColumnType("int");
 
@@ -17481,13 +17241,13 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasIndex("Unidad");
 
-                    b.HasIndex("Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "Configurable", "PosicionX", "PosicionY", "Minima", "Maxima", "Nivel", "Lote", "Entradas", "Salidas", "Duplicado", "Desasignable", "Asociacion", "Premezclas", "Importado", "Exportado", "Bloqueado", "StockMinimo", "NivelMinimo", "NivelMaximo", "AvisosSesion", "Color", "AsociacionObligatoria", "idOld", "MaPGrupo", "MaPTiempoLimpiezaLlenado", "MaPTipo", "MaPNivelMaximoActivo", "MaPNivelMinimoActivo", "MaPNivelMedioActivo", "MaPNivelPorcentajeActivo", "MaPVolumenSilo", "MaPCaudalMaxEstLlenando", "MaPCaudalMaxEstVaciando", "PaMHabilitadoLlenado", "PaMHabilitadoVaciado", "PaMNivelMaximo", "PaMNivelMinimo", "PaMNivelMedio", "PaMForzarLleno", "PaMForzarVacio", "PaMNivelPorcentaje", "PaMTemperatura", "PaMPresion", "PaMVariable1", "PaMVariable2", "PaMVariable3", "PaMVariable0", "MaPVariable0", "MaPVariable1", "MaPVariable2", "MaPVariable3", "Afino", "ConVibrador", "VelocidadLenta", "VelocidadRapida", "PaMCola", "PLCPosicion", "ModoBigBag", "DosificacionMaxima", "AfinoMaximo", "EnviarEnPorcentaje", "AfinoMultiDosi", "AfinoMaxMultiDosi", "PermitirAsociar", "AfinoMinimo", "MaPTiempoRegistros", "MinimoSiloResetUbi", "NoNegativos", "MezcladoLotes", "MezcladoMinimoDisolucion", "MezcladoDiasMinimoFCaducidad", "Visible", "Ordenacion")
+                    b.HasIndex("Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "Configurable", "PosicionX", "PosicionY", "Minima", "Maxima", "Nivel", "Lote", "Entradas", "Salidas", "Duplicado", "Desasignable", "Asociacion", "Premezclas", "Importado", "Exportado", "Bloqueado", "StockMinimo", "NivelMinimo", "NivelMaximo", "AvisosSesion", "Color", "AsociacionObligatoria", "idOld", "MaPGrupo", "MaPTiempoLimpiezaLlenado", "Type", "MaPNivelMaximoActivo", "MaPNivelMinimoActivo", "MaPNivelMedioActivo", "MaPNivelPorcentajeActivo", "MaPVolumenSilo", "MaPCaudalMaxEstLlenando", "MaPCaudalMaxEstVaciando", "PaMHabilitadoLlenado", "PaMHabilitadoVaciado", "PaMNivelMaximo", "PaMNivelMinimo", "PaMNivelMedio", "PaMForzarLleno", "PaMForzarVacio", "PaMNivelPorcentaje", "PaMTemperatura", "PaMPresion", "PaMVariable1", "PaMVariable2", "PaMVariable3", "PaMVariable0", "MaPVariable0", "MaPVariable1", "MaPVariable2", "MaPVariable3", "Afino", "ConVibrador", "VelocidadLenta", "VelocidadRapida", "PaMCola", "PLCPosicion", "ModoBigBag", "DosificacionMaxima", "AfinoMaximo", "EnviarEnPorcentaje", "AfinoMultiDosi", "AfinoMaxMultiDosi", "PermitirAsociar", "AfinoMinimo", "MaPTiempoRegistros", "MinimoSiloResetUbi", "NoNegativos", "MezcladoLotes", "MezcladoMinimoDisolucion", "MezcladoDiasMinimoFCaducidad", "Visible", "Ordenacion")
                         .HasName("_dta_index_Ubicaciones_1");
 
-                    b.HasIndex("Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "Configurable", "PosicionX", "PosicionY", "Minima", "Maxima", "Nivel", "Lote", "Entradas", "Salidas", "Duplicado", "Desasignable", "Asociacion", "Premezclas", "Importado", "Exportado", "Bloqueado", "StockMinimo", "NivelMinimo", "NivelMaximo", "AvisosSesion", "Color", "AsociacionObligatoria", "idOld", "MaPGrupo", "MaPTiempoLimpiezaLlenado", "MaPTipo", "MaPNivelMaximoActivo", "MaPNivelMinimoActivo", "MaPNivelMedioActivo", "MaPNivelPorcentajeActivo", "MaPVolumenSilo", "MaPCaudalMaxEstLlenando", "MaPCaudalMaxEstVaciando", "PaMHabilitadoLlenado", "PaMHabilitadoVaciado", "PaMNivelMaximo", "PaMNivelMinimo", "PaMNivelMedio", "PaMForzarLleno", "PaMForzarVacio", "PaMNivelPorcentaje", "PaMTemperatura", "PaMPresion", "PaMVariable1", "PaMVariable2", "PaMVariable3", "PaMVariable0", "MaPVariable0", "MaPVariable1", "MaPVariable2", "MaPVariable3", "Afino", "ConVibrador", "VelocidadLenta", "VelocidadRapida", "PaMCola", "PLCPosicion", "ModoBigBag", "DosificacionMaxima", "AfinoMaximo", "EnviarEnPorcentaje", "AfinoMultiDosi", "AfinoMaxMultiDosi", "PermitirAsociar", "AfinoMinimo", "MaPTiempoRegistros", "MinimoSiloResetUbi", "NoNegativos", "MezcladoLotes", "MezcladoMinimoDisolucion", "MezcladoDiasMinimoFCaducidad", "TipoPR", "ColaPropuesta", "Visible", "Ordenacion")
+                    b.HasIndex("Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "Configurable", "PosicionX", "PosicionY", "Minima", "Maxima", "Nivel", "Lote", "Entradas", "Salidas", "Duplicado", "Desasignable", "Asociacion", "Premezclas", "Importado", "Exportado", "Bloqueado", "StockMinimo", "NivelMinimo", "NivelMaximo", "AvisosSesion", "Color", "AsociacionObligatoria", "idOld", "MaPGrupo", "MaPTiempoLimpiezaLlenado", "Type", "MaPNivelMaximoActivo", "MaPNivelMinimoActivo", "MaPNivelMedioActivo", "MaPNivelPorcentajeActivo", "MaPVolumenSilo", "MaPCaudalMaxEstLlenando", "MaPCaudalMaxEstVaciando", "PaMHabilitadoLlenado", "PaMHabilitadoVaciado", "PaMNivelMaximo", "PaMNivelMinimo", "PaMNivelMedio", "PaMForzarLleno", "PaMForzarVacio", "PaMNivelPorcentaje", "PaMTemperatura", "PaMPresion", "PaMVariable1", "PaMVariable2", "PaMVariable3", "PaMVariable0", "MaPVariable0", "MaPVariable1", "MaPVariable2", "MaPVariable3", "Afino", "ConVibrador", "VelocidadLenta", "VelocidadRapida", "PaMCola", "PLCPosicion", "ModoBigBag", "DosificacionMaxima", "AfinoMaximo", "EnviarEnPorcentaje", "AfinoMultiDosi", "AfinoMaxMultiDosi", "PermitirAsociar", "AfinoMinimo", "MaPTiempoRegistros", "MinimoSiloResetUbi", "NoNegativos", "MezcladoLotes", "MezcladoMinimoDisolucion", "MezcladoDiasMinimoFCaducidad", "TipoPR", "ColaPropuesta", "Visible", "Ordenacion")
                         .HasName("IndexUbicaciones_1");
 
-                    b.HasIndex("Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "Configurable", "PosicionX", "PosicionY", "Minima", "Maxima", "Nivel", "Lote", "Entradas", "Salidas", "Duplicado", "Desasignable", "Asociacion", "Premezclas", "Importado", "Exportado", "Bloqueado", "StockMinimo", "NivelMinimo", "NivelMaximo", "AvisosSesion", "Color", "AsociacionObligatoria", "idOld", "MaPGrupo", "MaPTiempoLimpiezaLlenado", "MaPTipo", "MaPNivelMaximoActivo", "MaPNivelMinimoActivo", "MaPNivelMedioActivo", "MaPNivelPorcentajeActivo", "MaPVolumenSilo", "MaPCaudalMaxEstLlenando", "MaPCaudalMaxEstVaciando", "PaMHabilitadoLlenado", "PaMHabilitadoVaciado", "PaMNivelMaximo", "PaMNivelMinimo", "PaMNivelMedio", "PaMForzarLleno", "PaMForzarVacio", "PaMNivelPorcentaje", "PaMTemperatura", "PaMPresion", "PaMVariable1", "PaMVariable2", "PaMVariable3", "PaMVariable0", "MaPVariable0", "MaPVariable1", "MaPVariable2", "MaPVariable3", "Afino", "ConVibrador", "VelocidadLenta", "VelocidadRapida", "PaMCola", "PLCPosicion", "ModoBigBag", "DosificacionMaxima", "AfinoMaximo", "EnviarEnPorcentaje", "AfinoMultiDosi", "AfinoMaxMultiDosi", "PermitirAsociar", "AfinoMinimo", "MaPTiempoRegistros", "MinimoSiloResetUbi", "NoNegativos", "MezcladoLotes", "MezcladoMinimoDisolucion", "MezcladoDiasMinimoFCaducidad", "TipoPR", "ColaPropuesta", "PaMColaMulti", "Visible", "Ordenacion")
+                    b.HasIndex("Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "Configurable", "PosicionX", "PosicionY", "Minima", "Maxima", "Nivel", "Lote", "Entradas", "Salidas", "Duplicado", "Desasignable", "Asociacion", "Premezclas", "Importado", "Exportado", "Bloqueado", "StockMinimo", "NivelMinimo", "NivelMaximo", "AvisosSesion", "Color", "AsociacionObligatoria", "idOld", "MaPGrupo", "MaPTiempoLimpiezaLlenado", "Type", "MaPNivelMaximoActivo", "MaPNivelMinimoActivo", "MaPNivelMedioActivo", "MaPNivelPorcentajeActivo", "MaPVolumenSilo", "MaPCaudalMaxEstLlenando", "MaPCaudalMaxEstVaciando", "PaMHabilitadoLlenado", "PaMHabilitadoVaciado", "PaMNivelMaximo", "PaMNivelMinimo", "PaMNivelMedio", "PaMForzarLleno", "PaMForzarVacio", "PaMNivelPorcentaje", "PaMTemperatura", "PaMPresion", "PaMVariable1", "PaMVariable2", "PaMVariable3", "PaMVariable0", "MaPVariable0", "MaPVariable1", "MaPVariable2", "MaPVariable3", "Afino", "ConVibrador", "VelocidadLenta", "VelocidadRapida", "PaMCola", "PLCPosicion", "ModoBigBag", "DosificacionMaxima", "AfinoMaximo", "EnviarEnPorcentaje", "AfinoMultiDosi", "AfinoMaxMultiDosi", "PermitirAsociar", "AfinoMinimo", "MaPTiempoRegistros", "MinimoSiloResetUbi", "NoNegativos", "MezcladoLotes", "MezcladoMinimoDisolucion", "MezcladoDiasMinimoFCaducidad", "TipoPR", "ColaPropuesta", "PaMColaMulti", "Visible", "Ordenacion")
                         .HasName("IUbicaciones1");
 
                     b.ToTable("Ubicaciones");
@@ -18420,6 +18180,9 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Exportado")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("Fecha")
                         .HasColumnType("date");
 
@@ -18431,6 +18194,9 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.Property<DateTime?>("FechaInicio")
                         .HasColumnType("datetime");
+
+                    b.Property<bool>("Importado")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Impresiones")
                         .HasColumnType("int");
@@ -18498,11 +18264,17 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
+                    b.Property<bool>("Exportado")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("Fecha")
                         .HasColumnType("datetime");
 
                     b.Property<DateTime?>("FechaFin")
                         .HasColumnType("datetime");
+
+                    b.Property<bool>("Importado")
+                        .HasColumnType("bit");
 
                     b.Property<decimal?>("MedBultos")
                         .HasColumnType("decimal(18, 3)");
@@ -18602,22 +18374,25 @@ namespace VMES.Database.Vmes.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<decimal?>("Bultos")
-                        .HasColumnType("numeric(18, 3)");
+                        .HasColumnType("decimal(18, 2)");
 
-                    b.Property<decimal?>("Cantidad")
-                        .HasColumnType("numeric(18, 3)");
+                    b.Property<decimal>("Cantidad")
+                        .HasColumnType("decimal(18, 3)");
 
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("Fecha")
-                        .HasColumnType("datetime");
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal?>("Precio")
-                        .HasColumnType("numeric(18, 6)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<decimal?>("PrecioUnidad")
-                        .HasColumnType("numeric(18, 6)");
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("idEnvase")
                         .HasColumnType("int");
@@ -18625,27 +18400,19 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<int?>("idFormato")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idLineaSalidaMedicamento")
+                    b.Property<int>("idUnidad")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idMedicamento")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("idUnidad")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("idVentaLinia")
+                    b.Property<int>("idVentaLinia")
                         .HasColumnType("int");
 
                     b.HasKey("id");
 
+                    b.HasIndex("ProductoId");
+
                     b.HasIndex("idEnvase");
 
                     b.HasIndex("idFormato");
-
-                    b.HasIndex("idLineaSalidaMedicamento");
-
-                    b.HasIndex("idMedicamento");
 
                     b.HasIndex("idUnidad");
 
@@ -18674,24 +18441,6 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasIndex("idPuntoDescarga");
 
                     b.ToTable("VentasLiniasPuntosDescarga");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.VersionDatosExtra", b =>
-                {
-                    b.Property<int>("id")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("KWToneladaEfectivo")
-                        .HasColumnType("decimal(18, 4)")
-                        .HasComputedColumnSql("([dbo].[VersionKWToneladaEfectivo]([id]))");
-
-                    b.Property<decimal?>("KWToneladaTotal")
-                        .HasColumnType("decimal(18, 4)")
-                        .HasComputedColumnSql("([dbo].[VersionKWToneladaTotal]([id]))");
-
-                    b.HasKey("id");
-
-                    b.ToTable("VersionDatosExtra");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.VersionTPrevisto", b =>
@@ -18853,6 +18602,70 @@ namespace VMES.Database.Vmes.Migrations
                     b.ToTable("Veterinarios");
                 });
 
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Bascula+BasculaPenko", b =>
+                {
+                    b.HasBaseType("VMES.Database.Vmes.Models.Bascula");
+
+                    b.HasDiscriminator().HasValue(1);
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Bascula+BasculaPerle", b =>
+                {
+                    b.HasBaseType("VMES.Database.Vmes.Models.Bascula");
+
+                    b.Property<int?>("Length")
+                        .HasColumnName("Lenght")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StartIndex")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue(4);
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.HumanMachineInterface+EntradasSalidasHumanMachineInterface", b =>
+                {
+                    b.HasBaseType("VMES.Database.Vmes.Models.HumanMachineInterface");
+
+                    b.Property<int>("TagId")
+                        .HasColumnType("int");
+
+                    b.HasIndex("TagId");
+
+                    b.HasDiscriminator().HasValue((byte)1);
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.HumanMachineInterface+PremezclasHumanMachineInterface", b =>
+                {
+                    b.HasBaseType("VMES.Database.Vmes.Models.HumanMachineInterface");
+
+                    b.HasDiscriminator().HasValue((byte)2);
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Printer+IPPPrinter", b =>
+                {
+                    b.HasBaseType("VMES.Database.Vmes.Models.Printer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(64)")
+                        .HasMaxLength(64);
+
+                    b.HasDiscriminator().HasValue((byte)1);
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Printer+WindowsPrinter", b =>
+                {
+                    b.HasBaseType("VMES.Database.Vmes.Models.Printer");
+
+                    b.Property<string>("WindowsName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(64)")
+                        .HasMaxLength(64);
+
+                    b.HasDiscriminator().HasValue((byte)2);
+                });
+
             modelBuilder.Entity("VMES.Database.Vmes.Models.Aditivos", b =>
                 {
                     b.HasOne("VMES.Database.Vmes.Models.Formatos", "FormatoNavigation")
@@ -18956,17 +18769,17 @@ namespace VMES.Database.Vmes.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.Basculas", b =>
+            modelBuilder.Entity("VMES.Database.Vmes.Models.Bascula", b =>
                 {
                     b.HasOne("VMES.Database.Vmes.Models.OpcConfig", "OpcConfig")
                         .WithMany("Basculas")
                         .HasForeignKey("OpcConfigId")
-                        .HasConstraintName("FK__Basculas__OpcCon__54B68676");
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Tags", "TagNavigation")
                         .WithMany("Basculas")
-                        .HasForeignKey("Tag")
-                        .HasConstraintName("FK_Basculas_Tags");
+                        .HasForeignKey("Tag");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.BufferConsumidos", b =>
@@ -19097,6 +18910,40 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("BufferERPSolicitudRegularizacion")
                         .HasForeignKey("IdUsuario")
                         .HasConstraintName("FK_BufferERPSolicitudRegularizacion_Usuarios");
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.BufferERPSolicitudTraspaso", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.Ubicaciones", "Destino")
+                        .WithMany("BufferERPSolicitudTraspasoDestinos")
+                        .HasForeignKey("DestinoId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.Lotes", "Lote")
+                        .WithMany("BufferERPSolicitudTraspaso")
+                        .HasForeignKey("LoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.Ubicaciones", "Origen")
+                        .WithMany("BufferERPSolicitudTraspasoOrigenes")
+                        .HasForeignKey("OrigenId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.Usuarios", "Usuario")
+                        .WithMany("BufferERPSolicitudTraspaso")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.BufferERPVentasLineas", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.BufferERPVentas", "BufferErpVenta")
+                        .WithMany("BufferErpVentaLineas")
+                        .HasForeignKey("BufferErpVentaId");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.BufferERPVersiones", b =>
@@ -19283,7 +19130,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasOne("VMES.Database.Vmes.Models.Versiones", "VersionNavigation")
                         .WithMany("Componentes")
                         .HasForeignKey("Version")
-                        .HasConstraintName("FK_Componentes_Versiones")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.OperCabPlantillas", "idPlantillaNavigation")
@@ -19797,12 +19644,12 @@ namespace VMES.Database.Vmes.Migrations
                         .HasForeignKey("Unidad")
                         .HasConstraintName("FK_EntradasLineas_Unidades");
 
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "idBasculaPesajeBrutoNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "idBasculaPesajeBrutoNavigation")
                         .WithMany("EntradasLineasidBasculaPesajeBrutoNavigation")
                         .HasForeignKey("idBasculaPesajeBruto")
                         .HasConstraintName("FK_EntradasLineas_BasculasBruto");
 
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "idBasculaPesajeNetoNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "idBasculaPesajeNetoNavigation")
                         .WithMany("EntradasLineasidBasculaPesajeNetoNavigation")
                         .HasForeignKey("idBasculaPesajeNeto")
                         .HasConstraintName("FK_EntradasLineas_BasculasNeto");
@@ -19995,6 +19842,7 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("Formularios")
                         .HasForeignKey("Formula")
                         .HasConstraintName("FK_Formularios_Formulas")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Medicaciones", "MedicacionNavigation")
@@ -20029,16 +19877,6 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("Formulas")
                         .HasForeignKey("Producto")
                         .HasConstraintName("FK_Formulas_Productos");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.FormulasDatosExtra", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.Formulas", "idNavigation")
-                        .WithOne("FormulasDatosExtra")
-                        .HasForeignKey("VMES.Database.Vmes.Models.FormulasDatosExtra", "id")
-                        .HasConstraintName("FK_FormulasDatosExtra_Formulas")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.GMAO_Archivos_Elementos", b =>
@@ -20256,6 +20094,10 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("GMAO_ElemIntervencionesTrabajos")
                         .HasForeignKey("IdOperario")
                         .HasConstraintName("FK_GMAO_ElemIntervencionesTrabajos_GMAO_Operarios");
+
+                    b.HasOne("VMES.Database.Vmes.Models.GMAO_ElementReviewTask", "GMAO_ElementReviewTask")
+                        .WithMany("WorkOrderTasks")
+                        .HasForeignKey("ReviewTaskId");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.GMAO_ElemPertenencia", b =>
@@ -20305,6 +20147,21 @@ namespace VMES.Database.Vmes.Migrations
                         .WithOne("GMAO_ElementReviewSettings")
                         .HasForeignKey("VMES.Database.Vmes.Models.GMAO_ElementReviewSettings", "ElementId")
                         .HasConstraintName("FK__GMAO_Elem__Eleme__7D8391DF")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.GMAO_ElementReviewTask", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.GMAO_Elementos", "Element")
+                        .WithMany("GMAO_ElementReviewTasks")
+                        .HasForeignKey("ElementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.GMAO_ParadasConfiguracion", "Task")
+                        .WithMany("GMAO_ElementReviewTasks")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -20500,7 +20357,7 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Indicadores", b =>
                 {
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "IdBasculaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "IdBasculaNavigation")
                         .WithMany("Indicadores")
                         .HasForeignKey("IdBascula")
                         .HasConstraintName("FK_Indicadores_Basculas");
@@ -20513,6 +20370,10 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.InformesLib", b =>
                 {
+                    b.HasOne("VMES.Database.Vmes.Models.Printer", "DefaultPrinter")
+                        .WithMany("InformeLibs")
+                        .HasForeignKey("DefaultPrinterId");
+
                     b.HasOne("VMES.Database.Vmes.Models.InformesLibCategorias", "IdCategoriaNavigation")
                         .WithMany("InformesLib")
                         .HasForeignKey("IdCategoria")
@@ -20527,6 +20388,10 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.InformesLibUsuarios", b =>
                 {
+                    b.HasOne("VMES.Database.Vmes.Models.Printer", "DefaultPrinter")
+                        .WithMany("InformeLibUsuarios")
+                        .HasForeignKey("DefaultPrinterId");
+
                     b.HasOne("VMES.Database.Vmes.Models.InformesLib", "IdInformeNavigation")
                         .WithMany("InformesLibUsuarios")
                         .HasForeignKey("IdInforme")
@@ -20610,9 +20475,7 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasOne("VMES.Database.Vmes.Models.Stocks", "IdStockNavigation")
                         .WithMany("LogMovimientosStocks")
-                        .HasForeignKey("IdStock")
-                        .HasConstraintName("FK_LogMovimientosStocks_Stocks")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("IdStock");
 
                     b.HasOne("VMES.Database.Vmes.Models.Ubicaciones", "IdUbicacionNavigation")
                         .WithMany("LogMovimientosStocks")
@@ -20729,17 +20592,12 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Medidor", b =>
                 {
-                    b.HasOne("VMES.Database.Vmes.Models.OEEEstadosTipo", "EstadoForzadoNavigation")
-                        .WithMany("Medidores")
-                        .HasForeignKey("EstadoForzado")
-                        .HasConstraintName("FK_Medidores_OEEEstadosTipo");
-
                     b.HasOne("VMES.Database.Vmes.Models.FamiliasMedidor", "FamiliaMedidorNavigation")
                         .WithMany("Medidores")
                         .HasForeignKey("FamiliaMedidor")
                         .HasConstraintName("FK_Medidores_FamiliasMedidor");
 
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "IdBasculaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "IdBasculaNavigation")
                         .WithMany("Medidores")
                         .HasForeignKey("IdBascula")
                         .HasConstraintName("FK_Medidores_Basculas")
@@ -20797,11 +20655,6 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("Modulos")
                         .HasForeignKey("Departamento")
                         .HasConstraintName("FK_Modulos_Departamentos");
-
-                    b.HasOne("VMES.Database.Vmes.Models.OEEEstadosTipo", "EstadoForzadoNavigation")
-                        .WithMany("Modulos")
-                        .HasForeignKey("EstadoForzado")
-                        .HasConstraintName("FK_Modulos_OEEEstadosTipo");
 
                     b.HasOne("VMES.Database.Vmes.Models.Modulos", "ModuloAsociadoOrdenes1Navigation")
                         .WithMany("InverseModuloAsociadoOrdenes1Navigation")
@@ -21140,97 +20993,6 @@ namespace VMES.Database.Vmes.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstados", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.OEEEstadosTipo", "EstadoNavigation")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("Estado")
-                        .HasConstraintName("FK_OEEEstados_OEEEstadosTipo");
-
-                    b.HasOne("VMES.Database.Vmes.Models.NetAlarmas", "IdAlarmaActualNavigation")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("IdAlarmaActual")
-                        .HasConstraintName("FK_OEEEstados_NetAlarmas");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Medidor", "IdMedidorNavigation")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("IdMedidor")
-                        .HasConstraintName("FK_OEEEstados_Medidores");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Modulos", "IdModuloNavigation")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("IdModulo")
-                        .HasConstraintName("FK_OEEEstados_Modulos");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Ordenes", "IdOrdenActualNavigation")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("IdOrdenActual")
-                        .HasConstraintName("FK_OEEEstados_Ordenes");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Turnos", "IdTurnoNavigation")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("IdTurno")
-                        .HasConstraintName("FK_OEEEstados_Turnos");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Usuarios", "Operario")
-                        .WithMany("OEEEstados")
-                        .HasForeignKey("OperarioId")
-                        .HasConstraintName("FK_OEEEstados_Usuarios");
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosMedidores", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.OEEEstadosTipo", "idEstadoTipoNavigation")
-                        .WithMany("OEEEstadosMedidores")
-                        .HasForeignKey("idEstadoTipo")
-                        .HasConstraintName("FK_OEEEstadosMedidores_OEEEstadosTipo")
-                        .IsRequired();
-
-                    b.HasOne("VMES.Database.Vmes.Models.Medidor", "idMedidorNavigation")
-                        .WithMany("OEEEstadosMedidores")
-                        .HasForeignKey("idMedidor")
-                        .HasConstraintName("FK_OEEEstadosMedidores_Medidores")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosModulos", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.OEEEstadosTipo", "idEstadoTipoNavigation")
-                        .WithMany("OEEEstadosModulos")
-                        .HasForeignKey("idEstadoTipo")
-                        .HasConstraintName("FK_OEEEstadosModulos_OEEEstadosTipo")
-                        .IsRequired();
-
-                    b.HasOne("VMES.Database.Vmes.Models.Modulos", "idModuloNavigation")
-                        .WithMany("OEEEstadosModulos")
-                        .HasForeignKey("idModulo")
-                        .HasConstraintName("FK_OEEEstadosModulos_Modulos")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEEstadosTipoLista", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.OEEEstadosTipo", "IdEstadoTipoNavigation")
-                        .WithMany("OEEEstadosTipoLista")
-                        .HasForeignKey("IdEstadoTipo")
-                        .HasConstraintName("FK_OEEEstadosTipoLista_OEEEstadosTipo")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.OEEHorarios", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.Medidor", "idMedidorNavigation")
-                        .WithMany("OEEHorarios")
-                        .HasForeignKey("idMedidor")
-                        .HasConstraintName("FK_OEEHorarios_Medidores");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Modulos", "idModuloNavigation")
-                        .WithMany("OEEHorarios")
-                        .HasForeignKey("idModulo")
-                        .HasConstraintName("FK_OEEHorarios_Modulos")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
-
             modelBuilder.Entity("VMES.Database.Vmes.Models.OpcConfig", b =>
                 {
                     b.HasOne("VMES.Database.Vmes.Models.Gateway", "Gateway")
@@ -21423,6 +21185,10 @@ namespace VMES.Database.Vmes.Migrations
                         .HasForeignKey("ProductoDestino")
                         .HasConstraintName("FK_Ordenes_Productos");
 
+                    b.HasOne("VMES.Database.Vmes.Models.VentasLinias", "VentaLinea")
+                        .WithMany("Ordenes")
+                        .HasForeignKey("VentaLineaId");
+
                     b.HasOne("VMES.Database.Vmes.Models.Versiones", "VersionNavigation")
                         .WithMany("Ordenes")
                         .HasForeignKey("Version")
@@ -21484,6 +21250,13 @@ namespace VMES.Database.Vmes.Migrations
                         .HasConstraintName("FK_OrdenesRelacion_Ordenes");
                 });
 
+            modelBuilder.Entity("VMES.Database.Vmes.Models.OrdenesTransicionEstadosHistory", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.Ordenes", "Orden")
+                        .WithMany("OrdenesTransicionEstadosHistory")
+                        .HasForeignKey("OrdenId");
+                });
+
             modelBuilder.Entity("VMES.Database.Vmes.Models.Origenes", b =>
                 {
                     b.HasOne("VMES.Database.Vmes.Models.Medidor", "MedidorNavigation")
@@ -21498,21 +21271,21 @@ namespace VMES.Database.Vmes.Migrations
                         .HasConstraintName("FK_Origenes_Ubicaciones");
                 });
 
-            modelBuilder.Entity("VMES.Database.Vmes.Models.PLCAddonsVars", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.PLCAddons", "idAddonNavigation")
-                        .WithMany("PLCAddonsVars")
-                        .HasForeignKey("idAddon")
-                        .HasConstraintName("FK_PLCAddonsVars_PLCAddons")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("VMES.Database.Vmes.Models.Pistolas", b =>
                 {
                     b.HasOne("VMES.Database.Vmes.Models.Medidor", "IdMedidorNavigation")
                         .WithMany("Pistolas")
                         .HasForeignKey("IdMedidor")
                         .HasConstraintName("FK_Pistolas_Medidores");
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.PrintJob", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.Printer", "Printer")
+                        .WithMany("PrintJobs")
+                        .HasForeignKey("PrinterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.ProductoEnvaseEtiqueta", b =>
@@ -21525,6 +21298,27 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasOne("VMES.Database.Vmes.Models.Productos", "Producto")
                         .WithMany("ProductosEnvasesEtiquetas")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.ProductoMedidorCamino", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.Camino", "Camino")
+                        .WithMany("ProductosMedidoresCaminos")
+                        .HasForeignKey("CaminoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.Medidor", "Medidor")
+                        .WithMany("ProductosMedidoresCaminos")
+                        .HasForeignKey("MedidorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.Productos", "Producto")
+                        .WithMany("ProductosMedidoresCaminos")
                         .HasForeignKey("ProductoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -21786,14 +21580,12 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasOne("VMES.Database.Vmes.Models.Productos", "ProductoNavigation")
                         .WithMany("RecetasLineas")
                         .HasForeignKey("ProductoId")
-                        .HasConstraintName("FK_RecetasLineas_Productos")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Recetas", "idRecetaNavigation")
                         .WithMany("RecetasLineas")
                         .HasForeignKey("idReceta")
-                        .HasConstraintName("FK_RecetasLineas_Recetas")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -21915,6 +21707,10 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.SalidasLinias", b =>
                 {
+                    b.HasOne("VMES.Database.Vmes.Models.Medicaciones", "MedicacionNavigation")
+                        .WithMany("SalidasLinias")
+                        .HasForeignKey("MedicacionId");
+
                     b.HasOne("VMES.Database.Vmes.Models.Ubicaciones", "Origen1Navigation")
                         .WithMany("SalidasLiniasOrigen1Navigation")
                         .HasForeignKey("Origen1")
@@ -21940,12 +21736,12 @@ namespace VMES.Database.Vmes.Migrations
                         .HasForeignKey("idAlbaran")
                         .HasConstraintName("FK_SalidasLinias_SalidasAlbaranes");
 
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "idBasculaPesajeBrutoNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "idBasculaPesajeBrutoNavigation")
                         .WithMany("SalidasLiniasidBasculaPesajeBrutoNavigation")
                         .HasForeignKey("idBasculaPesajeBruto")
                         .HasConstraintName("FK_SalidasLinias_BasculasBruto");
 
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "idBasculaPesajeNetoNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "idBasculaPesajeNetoNavigation")
                         .WithMany("SalidasLiniasidBasculaPesajeNetoNavigation")
                         .HasForeignKey("idBasculaPesajeNeto")
                         .HasConstraintName("FK_SalidasLinias_BasculasNeto");
@@ -22019,7 +21815,15 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasOne("VMES.Database.Vmes.Models.Unidades", "IdUnidadNavigation")
                         .WithMany("SalidasLiniasMedicaciones")
                         .HasForeignKey("IdUnidad")
-                        .HasConstraintName("FK_SalidasLiniasMedicaciones_Unidades");
+                        .HasConstraintName("FK_SalidasLiniasMedicaciones_Unidades")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VMES.Database.Vmes.Models.Productos", "ProductoNavigation")
+                        .WithMany("SalidasLiniasMedicaciones")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Envases", "idEnvaseNavigation")
                         .WithMany("SalidasLiniasMedicaciones")
@@ -22031,11 +21835,6 @@ namespace VMES.Database.Vmes.Migrations
                         .HasForeignKey("idFormato")
                         .HasConstraintName("FK_SalidasLiniasMedicaciones_Formatos");
 
-                    b.HasOne("VMES.Database.Vmes.Models.Medicaciones", "idMedicamentoNavigation")
-                        .WithMany("SalidasLiniasMedicaciones")
-                        .HasForeignKey("idMedicamento")
-                        .HasConstraintName("FK_SalidasLiniasMedicaciones_Medicaciones");
-
                     b.HasOne("VMES.Database.Vmes.Models.Ubicaciones", "idOrigenNavigation")
                         .WithMany("SalidasLiniasMedicaciones")
                         .HasForeignKey("idOrigen")
@@ -22045,7 +21844,8 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("SalidasLiniasMedicaciones")
                         .HasForeignKey("idSalidaLinia")
                         .HasConstraintName("FK_SalidasLiniasMedicaciones_SalidasLinias")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.SalidasLiniasMuestras", b =>
@@ -22182,46 +21982,35 @@ namespace VMES.Database.Vmes.Migrations
                 {
                     b.HasOne("VMES.Database.Vmes.Models.Envases", "EnvaseNavigation")
                         .WithMany("Stocks")
-                        .HasForeignKey("Envase")
-                        .HasConstraintName("FK_Stocks_Envases");
+                        .HasForeignKey("Envase");
 
                     b.HasOne("VMES.Database.Vmes.Models.Formatos", "FormatoNavigation")
                         .WithMany("Stocks")
-                        .HasForeignKey("Formato")
-                        .HasConstraintName("FK_Stocks_Formatos");
+                        .HasForeignKey("Formato");
 
                     b.HasOne("VMES.Database.Vmes.Models.Lotes", "LoteNavigation")
                         .WithMany("Stocks")
                         .HasForeignKey("Lote")
-                        .HasConstraintName("FK_Stocks_Lotes")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("VMES.Database.Vmes.Models.Productos", "ProductoNavigation")
-                        .WithMany("Stocks")
-                        .HasForeignKey("Producto")
-                        .HasConstraintName("FK_Stocks_Productos");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Ubicaciones", "UbicacionNavigation")
                         .WithMany("Stocks")
                         .HasForeignKey("Ubicacion")
-                        .HasConstraintName("FK_Stocks_Ubicaciones")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Unidades", "UnidadNavigation")
                         .WithMany("Stocks")
-                        .HasForeignKey("Unidad")
-                        .HasConstraintName("FK_Stocks_Unidades");
+                        .HasForeignKey("Unidad");
 
                     b.HasOne("VMES.Database.Vmes.Models.EntradasLineas", "idEntradasLineasNavigation")
                         .WithMany("Stocks")
-                        .HasForeignKey("idEntradasLineas")
-                        .HasConstraintName("FK_Stocks_EntradasLineas")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("idEntradasLineas");
 
                     b.HasOne("VMES.Database.Vmes.Models.SalidasLinias", "idSalidasLineasNavigation")
                         .WithMany("Stocks")
-                        .HasForeignKey("idSalidasLineas")
-                        .HasConstraintName("FK_Stocks_SalidasLinias");
+                        .HasForeignKey("idSalidasLineas");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.StocksReserva", b =>
@@ -22293,7 +22082,7 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.TagsBasculas", b =>
                 {
-                    b.HasOne("VMES.Database.Vmes.Models.Basculas", "idBasculaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Bascula", "idBasculaNavigation")
                         .WithMany("TagsBasculas")
                         .HasForeignKey("idBascula")
                         .HasConstraintName("FK_TagsBasculas_Basculas")
@@ -22349,20 +22138,20 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Tarjetas", b =>
                 {
-                    b.HasOne("VMES.Database.Vmes.Models.EntradasLineas", "IdLinEntradaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.EntradasLineas", "EntradaLinea")
                         .WithMany("Tarjetas")
-                        .HasForeignKey("IdLinEntrada")
+                        .HasForeignKey("EntradaLineaId")
                         .HasConstraintName("FK_Tarjetas_EntradasLineas");
 
-                    b.HasOne("VMES.Database.Vmes.Models.SalidasLinias", "IdLinSalidaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Ordenes", "OrdenActual")
                         .WithMany("Tarjetas")
-                        .HasForeignKey("IdLinSalida")
-                        .HasConstraintName("FK_Tarjetas_SalidasLinias");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Ordenes", "IdOrdenActualNavigation")
-                        .WithMany("Tarjetas")
-                        .HasForeignKey("IdOrdenActual")
+                        .HasForeignKey("OrdenActualId")
                         .HasConstraintName("FK_Tarjetas_ordenes");
+
+                    b.HasOne("VMES.Database.Vmes.Models.SalidasLinias", "SalidaLinea")
+                        .WithMany("Tarjetas")
+                        .HasForeignKey("SalidaLineaId")
+                        .HasConstraintName("FK_Tarjetas_SalidasLinias");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.TempControlesMedidores", b =>
@@ -22676,6 +22465,12 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.VentasLiniasMedicaciones", b =>
                 {
+                    b.HasOne("VMES.Database.Vmes.Models.Productos", "ProductoNavigation")
+                        .WithMany("VentasLiniasMedicaciones")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("VMES.Database.Vmes.Models.Envases", "idEnvaseNavigation")
                         .WithMany("VentasLiniasMedicaciones")
                         .HasForeignKey("idEnvase")
@@ -22686,25 +22481,19 @@ namespace VMES.Database.Vmes.Migrations
                         .HasForeignKey("idFormato")
                         .HasConstraintName("FK_VentasLiniasMedicaciones_Formatos");
 
-                    b.HasOne("VMES.Database.Vmes.Models.SalidasLiniasMedicaciones", "idLineaSalidaMedicamentoNavigation")
-                        .WithMany("VentasLiniasMedicaciones")
-                        .HasForeignKey("idLineaSalidaMedicamento")
-                        .HasConstraintName("FK_VentasLiniasMedicaciones_SalidasLiniasMedicaciones");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Medicaciones", "idMedicamentoNavigation")
-                        .WithMany("VentasLiniasMedicaciones")
-                        .HasForeignKey("idMedicamento")
-                        .HasConstraintName("FK_VentasLiniasMedicaciones_Medicaciones");
-
                     b.HasOne("VMES.Database.Vmes.Models.Unidades", "idUnidadNavigation")
                         .WithMany("VentasLiniasMedicaciones")
                         .HasForeignKey("idUnidad")
-                        .HasConstraintName("FK_VentasLiniasMedicaciones_Unidades");
+                        .HasConstraintName("FK_VentasLiniasMedicaciones_Unidades")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.VentasLinias", "idVentaLiniaNavigation")
                         .WithMany("VentasLiniasMedicaciones")
                         .HasForeignKey("idVentaLinia")
-                        .HasConstraintName("FK_VentasLiniasMedicaciones_VentasLinias");
+                        .HasConstraintName("FK_VentasLiniasMedicaciones_VentasLinias")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.VentasLiniasPuntosDescarga", b =>
@@ -22719,16 +22508,6 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("VentasLiniasPuntosDescarga")
                         .HasForeignKey("idPuntoDescarga")
                         .HasConstraintName("FK_VentasLiniasPuntosDescarga_PuntosDescarga")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("VMES.Database.Vmes.Models.VersionDatosExtra", b =>
-                {
-                    b.HasOne("VMES.Database.Vmes.Models.Versiones", "idNavigation")
-                        .WithOne("VersionDatosExtra")
-                        .HasForeignKey("VMES.Database.Vmes.Models.VersionDatosExtra", "id")
-                        .HasConstraintName("FK_VersionDatosExtra_Version")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
@@ -22752,7 +22531,7 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasOne("VMES.Database.Vmes.Models.Formulas", "FormulaNavigation")
                         .WithMany("Versiones")
                         .HasForeignKey("Formula")
-                        .HasConstraintName("FK_Versiones_Formulas")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Unidades", "UnidadNavigation")
@@ -22773,6 +22552,15 @@ namespace VMES.Database.Vmes.Migrations
                         .WithMany("Veterinarios")
                         .HasForeignKey("ProvinciaId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("VMES.Database.Vmes.Models.HumanMachineInterface+EntradasSalidasHumanMachineInterface", b =>
+                {
+                    b.HasOne("VMES.Database.Vmes.Models.Tags", "Tag")
+                        .WithMany("EntradasSalidasHumanMachineInterfaces")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

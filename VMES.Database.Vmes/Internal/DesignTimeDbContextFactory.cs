@@ -10,7 +10,7 @@ namespace VMES.Database.Vmes.Internal
 		public VmesDbContext CreateDbContext(string[] args)
 		{
 			var dbContextOptionsBuilder = new DbContextOptionsBuilder<VmesDbContext>();
-			dbContextOptionsBuilder.UseSqlServer("Server=tcp:vmes-production.database.windows.net,1433;Initial Catalog=IntegraNet;Persist Security Info=False;User ID=vmes;Password=1_voltecsl;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
+			dbContextOptionsBuilder.UseSqlServer("Server=tcp:vmes-production.database.windows.net,1433;Initial Catalog=DashboardBug;Persist Security Info=False;User ID=sa;Password=your_password;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
 			return new VmesDbContext(dbContextOptionsBuilder.Options);
 		}
 

@@ -37,7 +37,7 @@ builder.Services.AddScoped<DashboardConfigurator>((IServiceProvider serviceProvi
 
     return configurator;
 });
-builder.Services.AddDbContext<VMES.Database.Vmes.VmesDbContext>(options => options.UseSqlServer("Database=EvofeedVMES;Password=your_password;Server=localhost;TrustServerCertificate=True;User Id=sa;"), ServiceLifetime.Transient);
+builder.Services.AddDbContext<VMES.Database.Vmes.VmesDbContext>(options => options.UseSqlServer("Database=DashboardBug;Password=your_password;Server=localhost;TrustServerCertificate=True;User Id=sa;"), ServiceLifetime.Transient);
 var app = builder.Build();
 
 
@@ -59,5 +59,9 @@ app.UseAuthorization();
 app.MapRazorPages();
 
 app.MapDashboardRoute("dashboardControl", "DefaultDashboard");
+
+using var serviceScope = app.Services.CreateScope();
+var vmesDbContext = serviceScope.ServiceProvider.GetRequiredService<VMES.Database.Vmes.VmesDbContext>();
+vmesDbContext.Database.Migrate();
 
 app.Run();

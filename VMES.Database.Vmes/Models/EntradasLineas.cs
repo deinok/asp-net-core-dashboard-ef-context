@@ -257,7 +257,7 @@ namespace VMES.Database.Vmes.Models
 		[InverseProperty(nameof(Models.StocksReserva.idEntradasLineasNavigation))]
 		public virtual ICollection<StocksReserva> StocksReserva { get; set; } = new HashSet<StocksReserva>();
 
-		[InverseProperty(nameof(Models.Tarjetas.IdLinEntradaNavigation))]
+		[InverseProperty(nameof(Models.Tarjetas.EntradaLinea))]
 		public virtual ICollection<Tarjetas> Tarjetas { get; set; } = new HashSet<Tarjetas>();
 
 	}

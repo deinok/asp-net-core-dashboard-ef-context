@@ -16538,20 +16538,15 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("int")
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+                    b.Property<int?>("EntradaLineaId")
+                        .HasColumnName("IdLinEntrada")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Estado")
                         .HasColumnType("int");
 
                     b.Property<bool?>("Exportado")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("IdLinEntrada")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdLinSalida")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IdOrdenActual")
-                        .HasColumnType("int");
 
                     b.Property<bool?>("Importado")
                         .HasColumnType("bit");
@@ -16559,6 +16554,10 @@ namespace VMES.Database.Vmes.Migrations
                     b.Property<string>("Nombre")
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
+
+                    b.Property<int?>("OrdenActualId")
+                        .HasColumnName("IdOrdenActual")
+                        .HasColumnType("int");
 
                     b.Property<int?>("Ordenacion")
                         .HasColumnType("int");
@@ -16570,6 +16569,10 @@ namespace VMES.Database.Vmes.Migrations
                         .HasColumnType("nvarchar(128)")
                         .HasMaxLength(128);
 
+                    b.Property<int?>("SalidaLineaId")
+                        .HasColumnName("IdLinSalida")
+                        .HasColumnType("int");
+
                     b.Property<string>("Valor")
                         .HasColumnType("nvarchar(50)")
                         .HasMaxLength(50);
@@ -16579,11 +16582,11 @@ namespace VMES.Database.Vmes.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IdLinEntrada");
+                    b.HasIndex("EntradaLineaId");
 
-                    b.HasIndex("IdLinSalida");
+                    b.HasIndex("OrdenActualId");
 
-                    b.HasIndex("IdOrdenActual");
+                    b.HasIndex("SalidaLineaId");
 
                     b.ToTable("Tarjetas");
                 });
@@ -21575,14 +21578,12 @@ namespace VMES.Database.Vmes.Migrations
                     b.HasOne("VMES.Database.Vmes.Models.Productos", "ProductoNavigation")
                         .WithMany("RecetasLineas")
                         .HasForeignKey("ProductoId")
-                        .HasConstraintName("FK_RecetasLineas_Productos")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VMES.Database.Vmes.Models.Recetas", "idRecetaNavigation")
                         .WithMany("RecetasLineas")
                         .HasForeignKey("idReceta")
-                        .HasConstraintName("FK_RecetasLineas_Recetas")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -22135,20 +22136,20 @@ namespace VMES.Database.Vmes.Migrations
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.Tarjetas", b =>
                 {
-                    b.HasOne("VMES.Database.Vmes.Models.EntradasLineas", "IdLinEntradaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.EntradasLineas", "EntradaLinea")
                         .WithMany("Tarjetas")
-                        .HasForeignKey("IdLinEntrada")
+                        .HasForeignKey("EntradaLineaId")
                         .HasConstraintName("FK_Tarjetas_EntradasLineas");
 
-                    b.HasOne("VMES.Database.Vmes.Models.SalidasLinias", "IdLinSalidaNavigation")
+                    b.HasOne("VMES.Database.Vmes.Models.Ordenes", "OrdenActual")
                         .WithMany("Tarjetas")
-                        .HasForeignKey("IdLinSalida")
-                        .HasConstraintName("FK_Tarjetas_SalidasLinias");
-
-                    b.HasOne("VMES.Database.Vmes.Models.Ordenes", "IdOrdenActualNavigation")
-                        .WithMany("Tarjetas")
-                        .HasForeignKey("IdOrdenActual")
+                        .HasForeignKey("OrdenActualId")
                         .HasConstraintName("FK_Tarjetas_ordenes");
+
+                    b.HasOne("VMES.Database.Vmes.Models.SalidasLinias", "SalidaLinea")
+                        .WithMany("Tarjetas")
+                        .HasForeignKey("SalidaLineaId")
+                        .HasConstraintName("FK_Tarjetas_SalidasLinias");
                 });
 
             modelBuilder.Entity("VMES.Database.Vmes.Models.TempControlesMedidores", b =>

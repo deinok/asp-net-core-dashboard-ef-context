@@ -7,6 +7,175 @@ namespace VMES.Database.Vmes.Migrations
 	{
 		protected override void Up(MigrationBuilder migrationBuilder)
 		{
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[LoteEnUbicacion] 
+(
+	-- Add the parameters for the function here
+	@ubi int
+)
+RETURNS nvarchar(50)
+AS
+BEGIN
+	DECLARE @ResultVar nvarchar(50);
+	
+	select top 1 @ResultVar = L.Nombre 
+		from stocks as s
+		inner join Lotes as L on L.id = s.Lote 
+		where s.Ubicacion = @ubi 
+			and (s.Estado =1)
+		order by s.Fecha asc;
+
+
+	RETURN @ResultVar
+
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenCantidadProducida]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,4)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,4)
+	SELECT @ret= sum(Cantidad)   from Desgloses where Orden = @idorden
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenKWConsumidosEfectivo]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,4)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,4)
+	SELECT @ret= sum(KwhEfectivo)  from Resultados where Orden = @idorden
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenKWConsumidosTotal]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,4)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,4)
+	SELECT @ret= sum(KWhTotal)  from Resultados where Orden = @idorden
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenKWEfectivoCantidad]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,6)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,6)
+	declare @cantidad decimal(18,6)
+
+	set @ret= isnull( ([dbo].[OrdenKWProducidosEfectivo](@idorden)) + ([dbo].[OrdenKWConsumidosEfectivo](@idorden)),0)
+	set @cantidad = ISNULL( dbo.OrdenCantidadProducida(@idorden),0)
+
+	if @cantidad =0 or @ret=0  return 0;
+	
+	set @ret= @ret/(@cantidad/1000)
+
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenKWProducidosEfectivo]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,4)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,4)
+	SELECT @ret= sum(KWhEfectivo)  from Desgloses where Orden = @idorden
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenKWProducidosTotal]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,4)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,4)
+	SELECT @ret= sum(KWhTotal)  from Desgloses where Orden = @idorden
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[OrdenKWTotalCantidad]
+(
+	-- Add the parameters for the function here
+	@idorden as int
+)
+RETURNS decimal(18,6)
+AS
+BEGIN
+	-- Declare the return variable here
+	DECLARE @ret decimal(18,6)
+	declare @cantidad decimal(18,6)
+
+	set @ret= isnull( ([dbo].[OrdenKWProducidosTotal](@idorden)) + ([dbo].[OrdenKWConsumidosTotal](@idorden)),0)
+	set @cantidad = ISNULL( dbo.OrdenCantidadProducida(@idorden),0)
+
+	if @cantidad =0 or @ret=0  return 0;
+	
+	set @ret= @ret/(@cantidad/1000)
+
+	RETURN isnull(@ret,0)
+END
+			");
+			migrationBuilder.Sql(@"
+CREATE FUNCTION [dbo].[StockEnUbicacion] 
+(
+	-- Add the parameters for the function here
+	@ubi int,
+	@NoNegativos bit
+)
+RETURNS decimal(18,5)
+AS
+BEGIN
+	DECLARE @ResultVar decimal(18,5)
+
+
+	if @NoNegativos = 1
+	begin
+		SELECT @ResultVar =  sum(cantidad) FROM Stocks WHERE Ubicacion  =@ubi and (Estado = 1 or Estado=2) and Cantidad >0
+		RETURN @ResultVar
+	end
+
+		SELECT @ResultVar =  sum(cantidad) FROM Stocks WHERE Ubicacion  =@ubi and (Estado = 1 or Estado=2)
+		RETURN @ResultVar
+
+END
+			");
+
 			migrationBuilder.CreateTable(
 				name: "Afecciones",
 				columns: table => new
@@ -64,71 +233,21 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "AnalizadoresRed",
+				name: "Audits",
 				columns: table => new
 				{
-					id = table.Column<int>(nullable: false)
+					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Descripcion = table.Column<string>(maxLength: 250, nullable: true),
-					ModoMaximetro = table.Column<bool>(nullable: true),
-					TensionSimple0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					TensionSimple1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					TensionSimple2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Corriente0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Corriente1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Corriente2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaActiva0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaActiva1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaActiva2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaReactiva0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaReactiva1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaReactiva2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaAparente0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaAparente1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaAparente2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					FactorPotencia0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					FactorPotencia1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					FactorPotencia2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					THD_V0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					THD_V1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					THD_V2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					THD_A0 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					THD_A1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					THD_A2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaActiva_Trifasica = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaInductiva_Trifasica = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaCapacitativa_Trifasica = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					CosFi_Trifasico = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					FactorPotencia_Trifasico = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Frecuencia = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					VCompuestaL1_L2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					VCompuestaL2_L3 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					VCompuestaL3_L1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					PotenciaAparente_Trifasica = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Max_Demanda = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Corriente_Neutro = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Max_Demanda_L1 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Max_Demanda_L2 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Max_Demanda_L3 = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Activa = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Reactiva_Inductiva = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Reactiva_Capacitiva = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Aparente = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Activa_Generada = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Capacitiva_Generada = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Aparente_Generada = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					SobreConsumo = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					RegistrarDatos = table.Column<bool>(nullable: true),
-					PosicionPLC = table.Column<int>(nullable: true),
-					Corriente_trifasica = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Temperatura = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					Energia_Inductiva_Generada = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
-					IdOpc = table.Column<int>(nullable: true)
+					Timestamp = table.Column<DateTime>(nullable: false),
+					Hostname = table.Column<string>(maxLength: 256, nullable: false),
+					StackTrace = table.Column<string>(nullable: true),
+					User = table.Column<string>(maxLength: 64, nullable: true),
+					Ip = table.Column<string>(maxLength: 64, nullable: true),
+					Mac = table.Column<string>(maxLength: 64, nullable: true)
 				},
 				constraints: table =>
 				{
-					table.PrimaryKey("PK_AnalizadoresRed", x => x.id);
+					table.PrimaryKey("PK_Audits", x => x.Id);
 				});
 
 			migrationBuilder.CreateTable(
@@ -423,8 +542,8 @@ namespace VMES.Database.Vmes.Migrations
 					RefCliente = table.Column<string>(maxLength: 50, nullable: true),
 					RefDomicilio = table.Column<string>(maxLength: 50, nullable: true),
 					RefPDescarga = table.Column<string>(maxLength: 50, nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
-					Comentario = table.Column<string>(type: "ntext", nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
+					Comentario = table.Column<string>(nullable: true),
 					RefProducto = table.Column<string>(maxLength: 50, nullable: true),
 					RefEnvase = table.Column<string>(maxLength: 50, nullable: true),
 					RefFormato = table.Column<string>(maxLength: 50, nullable: true),
@@ -630,10 +749,10 @@ namespace VMES.Database.Vmes.Migrations
 					Errores = table.Column<string>(maxLength: 1000, nullable: true),
 					Serie = table.Column<int>(nullable: true),
 					Numero = table.Column<int>(nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
 					Referencia = table.Column<string>(maxLength: 50, nullable: true),
 					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					Comentario = table.Column<string>(type: "ntext", nullable: true),
+					Comentario = table.Column<string>(nullable: true),
 					FechaPrevista = table.Column<DateTime>(type: "datetime", nullable: true),
 					RefCliente = table.Column<string>(maxLength: 50, nullable: true),
 					esExport = table.Column<bool>(nullable: true),
@@ -764,8 +883,8 @@ namespace VMES.Database.Vmes.Migrations
 					FechaEntrega = table.Column<DateTime>(type: "datetime", nullable: true),
 					DomicilioId = table.Column<int>(nullable: true),
 					DomicilioRef = table.Column<string>(maxLength: 20, nullable: true),
-					Comentario = table.Column<string>(type: "ntext", nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
+					Comentario = table.Column<string>(nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
 					PrecioTransporte = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
 					Referencia = table.Column<string>(maxLength: 50, nullable: true),
 					RefERP = table.Column<string>(maxLength: 50, nullable: true),
@@ -775,38 +894,6 @@ namespace VMES.Database.Vmes.Migrations
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_BufferERPVentas", x => x.id);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "BufferERPVentasLineas",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					FImportado = table.Column<DateTime>(type: "datetime", nullable: true),
-					Preparado = table.Column<bool>(nullable: true),
-					Tratado = table.Column<bool>(nullable: true),
-					FTratado = table.Column<DateTime>(type: "datetime", nullable: true),
-					Errores = table.Column<string>(maxLength: 1000, nullable: true),
-					Serie = table.Column<int>(nullable: true),
-					RevVenta = table.Column<string>(maxLength: 50, nullable: true),
-					RefProducto = table.Column<string>(maxLength: 50, nullable: true),
-					RefFormato = table.Column<string>(maxLength: 50, nullable: true),
-					RefEnvase = table.Column<string>(maxLength: 50, nullable: true),
-					Bultos = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
-					Cantidad = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
-					RefUnidad = table.Column<string>(maxLength: 50, nullable: true),
-					RefDomicilio = table.Column<string>(maxLength: 50, nullable: true),
-					PrecioUnidad = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
-					linea = table.Column<int>(nullable: true),
-					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					Observaciones = table.Column<string>(maxLength: 250, nullable: true),
-					RefPuntoDescarga = table.Column<string>(maxLength: 50, nullable: true),
-					FechaInsercion = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_BufferERPVentasLineas", x => x.id);
 				});
 
 			migrationBuilder.CreateTable(
@@ -882,6 +969,19 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "Dashboards",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(nullable: false),
+					Name = table.Column<string>(maxLength: 64, nullable: false),
+					Value = table.Column<string>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_Dashboards", x => x.Id);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "DashboardsLibCategorias",
 				columns: table => new
 				{
@@ -926,7 +1026,7 @@ namespace VMES.Database.Vmes.Migrations
 					Provincia = table.Column<string>(maxLength: 50, nullable: true),
 					Telefono = table.Column<string>(maxLength: 15, nullable: true),
 					Fax = table.Column<string>(maxLength: 15, nullable: true),
-					Logotipo = table.Column<byte[]>(type: "image", nullable: true),
+					Logotipo = table.Column<byte[]>(nullable: true),
 					RSanidad = table.Column<string>(maxLength: 50, nullable: true),
 					RIA = table.Column<string>(maxLength: 50, nullable: true),
 					Cabecera1 = table.Column<string>(maxLength: 50, nullable: true),
@@ -1001,7 +1101,7 @@ namespace VMES.Database.Vmes.Migrations
 					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Contenido = table.Column<string>(type: "ntext", nullable: true),
+					Contenido = table.Column<string>(nullable: true),
 					Impresora = table.Column<int>(nullable: true),
 					Inicializacion = table.Column<string>(maxLength: 50, nullable: true),
 					Archivo = table.Column<string>(maxLength: 255, nullable: true),
@@ -1045,7 +1145,7 @@ namespace VMES.Database.Vmes.Migrations
 					MAC = table.Column<string>(maxLength: 12, nullable: true),
 					Equipo = table.Column<string>(maxLength: 50, nullable: true),
 					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					Formulario = table.Column<string>(maxLength: 50, nullable: true),
+					Formulario = table.Column<string>(nullable: true),
 					Observaciones = table.Column<string>(maxLength: 1000, nullable: true)
 				},
 				constraints: table =>
@@ -1107,7 +1207,7 @@ namespace VMES.Database.Vmes.Migrations
 					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Descripcion = table.Column<string>(type: "ntext", nullable: true),
+					Descripcion = table.Column<string>(nullable: true),
 					Tipo = table.Column<int>(nullable: true),
 					NombreArchivoOriginal = table.Column<string>(maxLength: 50, nullable: true),
 					FechaSubida = table.Column<DateTime>(type: "datetime", nullable: true),
@@ -1346,26 +1446,6 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "OEEEstadosTipo",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Descripcion = table.Column<string>(maxLength: 250, nullable: true),
-					EstadoEnHorario = table.Column<bool>(nullable: true),
-					EstadoMantenimiento = table.Column<bool>(nullable: true),
-					EstadoAveria = table.Column<bool>(nullable: true),
-					EstadoProduciendo = table.Column<bool>(nullable: true),
-					EstadoAveriaGrave = table.Column<bool>(nullable: true),
-					Tipo = table.Column<int>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OEEEstadosTipo", x => x.id);
-				});
-
-			migrationBuilder.CreateTable(
 				name: "Opciones",
 				columns: table => new
 				{
@@ -1430,51 +1510,18 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "PLCAddons",
+				name: "Printers",
 				columns: table => new
 				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: false),
-					Descripción = table.Column<string>(maxLength: 100, nullable: false),
-					Tipo = table.Column<int>(nullable: false)
+					Id = table.Column<Guid>(nullable: false),
+					Name = table.Column<string>(maxLength: 64, nullable: false),
+					Type = table.Column<byte>(nullable: false),
+					Url = table.Column<string>(maxLength: 64, nullable: true),
+					WindowsName = table.Column<string>(maxLength: 64, nullable: true)
 				},
 				constraints: table =>
 				{
-					table.PrimaryKey("PK_PLCAddons", x => x.id);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "PLCRead",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: false),
-					posicion = table.Column<int>(nullable: false),
-					Valor = table.Column<string>(maxLength: 100, nullable: true),
-					UltimaLectura = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())")
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_PLCRead", x => x.id);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "PLCWrite",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: false),
-					Valor = table.Column<string>(maxLength: 100, nullable: false),
-					FechaEnviado = table.Column<DateTime>(type: "datetime", nullable: false),
-					FechaWrite = table.Column<DateTime>(type: "datetime", nullable: true),
-					Estado = table.Column<int>(nullable: false)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_PLCWrite", x => x.id);
+					table.PrimaryKey("PK_Printers", x => x.Id);
 				});
 
 			migrationBuilder.CreateTable(
@@ -1509,18 +1556,18 @@ namespace VMES.Database.Vmes.Migrations
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Nombre = table.Column<string>(maxLength: 50, nullable: true),
 					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					ContadorOrdenes = table.Column<int>(nullable: true),
+					ContadorOrdenes = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
 					Estado = table.Column<int>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
-					ContadorCompras = table.Column<int>(nullable: true, defaultValueSql: "((0))"),
-					ContadorVentas = table.Column<int>(nullable: true, defaultValueSql: "((0))"),
-					ContadorViajes = table.Column<int>(nullable: false),
-					ContadorRecetas = table.Column<int>(nullable: true),
-					ContadorAlbaranes = table.Column<int>(nullable: true),
-					ContadorCertificadoDesinfeccion = table.Column<int>(nullable: true),
-					ContadorSalidas = table.Column<int>(nullable: true),
-					ContadorEntradas = table.Column<int>(nullable: true)
+					Importado = table.Column<bool>(nullable: false),
+					Exportado = table.Column<bool>(nullable: false),
+					ContadorCompras = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorVentas = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorViajes = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorRecetas = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorAlbaranes = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorCertificadoDesinfeccion = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorSalidas = table.Column<int>(nullable: false, defaultValueSql: "((0))"),
+					ContadorEntradas = table.Column<int>(nullable: false, defaultValueSql: "((0))")
 				},
 				constraints: table =>
 				{
@@ -1666,21 +1713,6 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "Turnos",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					HoraInicio = table.Column<TimeSpan>(nullable: true),
-					HoraFinal = table.Column<TimeSpan>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_Turnos", x => x.id);
-				});
-
-			migrationBuilder.CreateTable(
 				name: "Unidades",
 				columns: table => new
 				{
@@ -1781,11 +1813,56 @@ namespace VMES.Database.Vmes.Migrations
 					RecetasEditar = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					PRECabOrdenesProduccion = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					PRECabOrdenesSalidasViajes = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
-					TrazabilidadResumenVer = table.Column<bool>(nullable: true, defaultValueSql: "((1))")
+					TrazabilidadResumenVer = table.Column<bool>(nullable: true, defaultValueSql: "((1))"),
+					CambioRapidoOPC = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
+					SMTP = table.Column<bool>(nullable: true),
+					Alertas = table.Column<bool>(nullable: true),
+					ResetComunicaciones = table.Column<bool>(nullable: true),
+					DashboardEditar = table.Column<bool>(nullable: true),
+					LayoutMaximizar = table.Column<bool>(nullable: true),
+					ForzarPopupAlarmas = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_UsuariosRoles", x => x.Id);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "Medicaciones",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					Referencia = table.Column<string>(maxLength: 50, nullable: true),
+					Nombre = table.Column<string>(maxLength: 50, nullable: true),
+					Fecha = table.Column<DateTime>(nullable: true),
+					Frecuencia = table.Column<int>(nullable: true),
+					Duracion = table.Column<int>(nullable: true),
+					TiempoEspera = table.Column<int>(nullable: true),
+					Conservacion = table.Column<int>(nullable: true),
+					Total = table.Column<int>(nullable: true),
+					Afeccion = table.Column<int>(nullable: true),
+					Estado = table.Column<int>(nullable: true),
+					Importado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: true),
+					Observaciones = table.Column<string>(maxLength: 254, nullable: true),
+					Indicaciones = table.Column<string>(maxLength: 254, nullable: true),
+					NaturalezaTratamiento = table.Column<string>(maxLength: 254, nullable: true),
+					Literal = table.Column<string>(maxLength: 50, nullable: true),
+					TiempoEsperaLeche = table.Column<int>(nullable: true),
+					TiempoEsperaHuevos = table.Column<int>(nullable: true),
+					StockIngredientes = table.Column<bool>(nullable: true),
+					Edad = table.Column<string>(maxLength: 120, nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_Medicaciones", x => x.Id);
+					table.ForeignKey(
+						name: "FK_Medicaciones_Afecciones",
+						column: x => x.Afeccion,
+						principalTable: "Afecciones",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -1798,7 +1875,7 @@ namespace VMES.Database.Vmes.Migrations
 					Activo = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					smtpReceptor = table.Column<string>(maxLength: 50, nullable: true),
 					smtpAsunto = table.Column<string>(maxLength: 50, nullable: true),
-					smtpMensaje = table.Column<string>(type: "ntext", nullable: true),
+					smtpMensaje = table.Column<string>(nullable: true),
 					smtpIsBodyHtml = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					idServerSmtp = table.Column<int>(nullable: true),
 					SMSReceptor = table.Column<string>(maxLength: 50, nullable: true)
@@ -1812,6 +1889,27 @@ namespace VMES.Database.Vmes.Migrations
 						principalTable: "AlertasSmtpConfigs",
 						principalColumn: "id",
 						onDelete: ReferentialAction.SetNull);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "AuditTables",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					AuditId = table.Column<int>(nullable: false),
+					Table = table.Column<string>(maxLength: 128, nullable: false),
+					State = table.Column<int>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_AuditTables", x => x.Id);
+					table.ForeignKey(
+						name: "FK_AuditTables_Audits_AuditId",
+						column: x => x.AuditId,
+						principalTable: "Audits",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -2165,6 +2263,45 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "BufferERPVentasLineas",
+				columns: table => new
+				{
+					id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					FImportado = table.Column<DateTime>(type: "datetime", nullable: true),
+					Preparado = table.Column<bool>(nullable: true),
+					Tratado = table.Column<bool>(nullable: true),
+					FTratado = table.Column<DateTime>(type: "datetime", nullable: true),
+					Errores = table.Column<string>(maxLength: 1000, nullable: true),
+					Serie = table.Column<int>(nullable: true),
+					RevVenta = table.Column<string>(maxLength: 50, nullable: true),
+					RefProducto = table.Column<string>(maxLength: 50, nullable: true),
+					RefFormato = table.Column<string>(maxLength: 50, nullable: true),
+					RefEnvase = table.Column<string>(maxLength: 50, nullable: true),
+					Bultos = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
+					Cantidad = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
+					RefUnidad = table.Column<string>(maxLength: 50, nullable: true),
+					RefDomicilio = table.Column<string>(maxLength: 50, nullable: true),
+					PrecioUnidad = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
+					linea = table.Column<int>(nullable: true),
+					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
+					Observaciones = table.Column<string>(maxLength: 250, nullable: true),
+					RefPuntoDescarga = table.Column<string>(maxLength: 50, nullable: true),
+					FechaInsercion = table.Column<DateTime>(type: "datetime", nullable: true, defaultValueSql: "(getdate())"),
+					BufferErpVentaId = table.Column<int>(nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_BufferERPVentasLineas", x => x.id);
+					table.ForeignKey(
+						name: "FK_BufferERPVentasLineas_BufferERPVentas_BufferErpVentaId",
+						column: x => x.BufferErpVentaId,
+						principalTable: "BufferERPVentas",
+						principalColumn: "id",
+						onDelete: ReferentialAction.Restrict);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "DashboardsLib",
 				columns: table => new
 				{
@@ -2200,28 +2337,6 @@ namespace VMES.Database.Vmes.Migrations
 						principalTable: "DashboardsLib",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "Veterinarios",
-				columns: table => new
-				{
-					Id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Apellidos = table.Column<string>(maxLength: 50, nullable: true),
-					NColegiado = table.Column<string>(maxLength: 50, nullable: true),
-					IdEmpresa = table.Column<int>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_Veterinarios", x => x.Id);
-					table.ForeignKey(
-						name: "FK_Veterinarios_Empresas",
-						column: x => x.IdEmpresa,
-						principalTable: "Empresas",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.SetNull);
 				});
 
 			migrationBuilder.CreateTable(
@@ -2387,8 +2502,8 @@ namespace VMES.Database.Vmes.Migrations
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Nombre = table.Column<string>(maxLength: 250, nullable: true),
 					Referencia = table.Column<string>(maxLength: 50, nullable: true),
-					Descripcion = table.Column<string>(type: "ntext", nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
+					Descripcion = table.Column<string>(nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
 					ProveedorHabitual = table.Column<int>(nullable: true)
 				},
 				constraints: table =>
@@ -2398,63 +2513,6 @@ namespace VMES.Database.Vmes.Migrations
 						name: "FK_GMAO_ElementosTipos_GMAO_Proveedores",
 						column: x => x.ProveedorHabitual,
 						principalTable: "GMAO_Proveedores",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "InformesLib",
-				columns: table => new
-				{
-					Id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					NombreInforme = table.Column<string>(maxLength: 50, nullable: true),
-					IdCategoria = table.Column<int>(nullable: true),
-					IsBase = table.Column<bool>(nullable: false),
-					IdInformeBase = table.Column<int>(nullable: true),
-					Visible = table.Column<bool>(nullable: false),
-					FechaUltima = table.Column<DateTime>(type: "datetime", nullable: true),
-					UltimoEditor = table.Column<string>(maxLength: 50, nullable: true),
-					DatosInforme = table.Column<byte[]>(nullable: true),
-					Vista = table.Column<string>(maxLength: 50, nullable: true),
-					VistaXML = table.Column<byte[]>(nullable: true),
-					ImpresoraDefecto = table.Column<string>(maxLength: 50, nullable: true),
-					ImpAutomatico = table.Column<bool>(nullable: true),
-					NumCopias = table.Column<int>(nullable: true),
-					VisibleUsuario = table.Column<bool>(nullable: true, defaultValueSql: "((1))"),
-					CopiaPara = table.Column<string>(maxLength: 250, nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_InformesLib", x => x.Id);
-					table.ForeignKey(
-						name: "FK_InformesLib_InformesLibCategorias",
-						column: x => x.IdCategoria,
-						principalTable: "InformesLibCategorias",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.SetNull);
-					table.ForeignKey(
-						name: "FK_InformesLib_InformesLib",
-						column: x => x.IdInformeBase,
-						principalTable: "InformesLib",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "OEEEstadosTipoLista",
-				columns: table => new
-				{
-					IdEstadoTipo = table.Column<int>(nullable: false),
-					IdEstadoEnum = table.Column<int>(nullable: false)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OEEEstadosTipoLista", x => new { x.IdEstadoTipo, x.IdEstadoEnum });
-					table.ForeignKey(
-						name: "FK_OEEEstadosTipoLista_OEEEstadosTipo",
-						column: x => x.IdEstadoTipo,
-						principalTable: "OEEEstadosTipo",
 						principalColumn: "id",
 						onDelete: ReferentialAction.Restrict);
 				});
@@ -2483,25 +2541,70 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "PLCAddonsVars",
+				name: "InformesLib",
 				columns: table => new
 				{
-					id = table.Column<int>(nullable: false)
+					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					idAddon = table.Column<int>(nullable: true),
-					Nombre = table.Column<string>(maxLength: 50, nullable: false),
-					Descripcion = table.Column<string>(maxLength: 100, nullable: true),
-					subscribir = table.Column<bool>(nullable: false),
-					Tipo = table.Column<int>(nullable: false)
+					NombreInforme = table.Column<string>(maxLength: 50, nullable: true),
+					IdCategoria = table.Column<int>(nullable: true),
+					IsBase = table.Column<bool>(nullable: false),
+					IdInformeBase = table.Column<int>(nullable: true),
+					Visible = table.Column<bool>(nullable: false),
+					FechaUltima = table.Column<DateTime>(type: "datetime", nullable: true),
+					UltimoEditor = table.Column<string>(maxLength: 50, nullable: true),
+					DatosInforme = table.Column<byte[]>(nullable: true),
+					Vista = table.Column<string>(maxLength: 50, nullable: true),
+					VistaXML = table.Column<byte[]>(nullable: true),
+					ImpresoraDefecto = table.Column<string>(maxLength: 50, nullable: true),
+					ImpAutomatico = table.Column<bool>(nullable: true),
+					NumCopias = table.Column<int>(nullable: true),
+					VisibleUsuario = table.Column<bool>(nullable: true, defaultValueSql: "((1))"),
+					CopiaPara = table.Column<string>(maxLength: 250, nullable: true),
+					DefaultPrinterId = table.Column<Guid>(nullable: true)
 				},
 				constraints: table =>
 				{
-					table.PrimaryKey("PK_PLCAddonsVars", x => x.id);
+					table.PrimaryKey("PK_InformesLib", x => x.Id);
 					table.ForeignKey(
-						name: "FK_PLCAddonsVars_PLCAddons",
-						column: x => x.idAddon,
-						principalTable: "PLCAddons",
-						principalColumn: "id",
+						name: "FK_InformesLib_Printers_DefaultPrinterId",
+						column: x => x.DefaultPrinterId,
+						principalTable: "Printers",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_InformesLib_InformesLibCategorias",
+						column: x => x.IdCategoria,
+						principalTable: "InformesLibCategorias",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.SetNull);
+					table.ForeignKey(
+						name: "FK_InformesLib_InformesLib",
+						column: x => x.IdInformeBase,
+						principalTable: "InformesLib",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "PrintJobs",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(nullable: false),
+					PrinterId = table.Column<Guid>(nullable: false),
+					Status = table.Column<byte>(nullable: false),
+					Timestamp = table.Column<DateTimeOffset>(nullable: false),
+					Copies = table.Column<int>(nullable: false),
+					Content = table.Column<byte[]>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_PrintJobs", x => x.Id);
+					table.ForeignKey(
+						name: "FK_PrintJobs_Printers_PrinterId",
+						column: x => x.PrinterId,
+						principalTable: "Printers",
+						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
 				});
 
@@ -2591,28 +2694,6 @@ namespace VMES.Database.Vmes.Migrations
 						principalTable: "Tenants",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "CompActivosLista",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Unidad = table.Column<int>(nullable: true),
-					Descripcion = table.Column<string>(maxLength: 250, nullable: true),
-					Medicamento = table.Column<bool>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_CompActivosLista", x => x.id);
-					table.ForeignKey(
-						name: "FK_CompActivosLista_Unidades",
-						column: x => x.Unidad,
-						principalTable: "Unidades",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -2748,7 +2829,7 @@ namespace VMES.Database.Vmes.Migrations
 					idAlertasUsuarios = table.Column<int>(nullable: true),
 					idInforme = table.Column<int>(nullable: true),
 					Asunto = table.Column<string>(maxLength: 50, nullable: true),
-					Mensaje = table.Column<string>(type: "ntext", nullable: true),
+					Mensaje = table.Column<string>(nullable: true),
 					TipoProgramacion = table.Column<int>(nullable: true),
 					DiaSemana = table.Column<int>(nullable: true),
 					DiaMes1 = table.Column<int>(nullable: true),
@@ -2763,6 +2844,28 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.idAlertasUsuarios,
 						principalTable: "AlertasUsuarios",
 						principalColumn: "id",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "AuditColumns",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					AuditTableId = table.Column<int>(nullable: false),
+					Column = table.Column<string>(maxLength: 128, nullable: false),
+					OldValue = table.Column<string>(maxLength: 256, nullable: true),
+					NewValue = table.Column<string>(maxLength: 256, nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_AuditColumns", x => x.Id);
+					table.ForeignKey(
+						name: "FK_AuditColumns_AuditTables_AuditTableId",
+						column: x => x.AuditTableId,
+						principalTable: "AuditTables",
+						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
 				});
 
@@ -3098,9 +3201,9 @@ namespace VMES.Database.Vmes.Migrations
 					Pais = table.Column<int>(nullable: true),
 					Telefono = table.Column<string>(maxLength: 20, nullable: true),
 					Inhabilitado = table.Column<bool>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
 					Refrescado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
 					RazonSocial = table.Column<string>(maxLength: 50, nullable: true),
 					idOld = table.Column<int>(nullable: true),
 					PorDefecto = table.Column<bool>(nullable: true)
@@ -3222,11 +3325,11 @@ namespace VMES.Database.Vmes.Migrations
 					Telefono = table.Column<string>(maxLength: 20, nullable: true),
 					Provincia = table.Column<int>(nullable: true),
 					Abreviado = table.Column<string>(maxLength: 40, nullable: true),
-					Importado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
 					Pais = table.Column<int>(nullable: true),
 					Inhabilitado = table.Column<bool>(nullable: true),
 					Refrescado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
 					idOld = table.Column<int>(nullable: true),
 					NombreContacto = table.Column<string>(maxLength: 50, nullable: true),
 					TelefonoContacto = table.Column<string>(maxLength: 20, nullable: true),
@@ -3252,17 +3355,51 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "OpcConfig",
+				name: "Veterinarios",
 				columns: table => new
 				{
 					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Tipo = table.Column<int>(nullable: false, defaultValueSql: "((1))"),
+					Apellidos = table.Column<string>(maxLength: 50, nullable: true),
+					NColegiado = table.Column<string>(maxLength: 50, nullable: true),
+					DNI = table.Column<string>(maxLength: 9, nullable: true),
+					Domicilio = table.Column<string>(maxLength: 120, nullable: true),
+					CodigoPostal = table.Column<string>(maxLength: 10, nullable: true),
+					Poblacion = table.Column<string>(maxLength: 120, nullable: true),
+					ProvinciaId = table.Column<int>(nullable: true),
+					IdEmpresa = table.Column<int>(nullable: true),
+					Predeterminado = table.Column<bool>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_Veterinarios", x => x.Id);
+					table.ForeignKey(
+						name: "FK_Veterinarios_Empresas",
+						column: x => x.IdEmpresa,
+						principalTable: "Empresas",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.SetNull);
+					table.ForeignKey(
+						name: "FK_Veterinarios_Provincias_ProvinciaId",
+						column: x => x.ProvinciaId,
+						principalTable: "Provincias",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.SetNull);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "OpcConfig",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					Nombre = table.Column<string>(maxLength: 64, nullable: true),
+					Tipo = table.Column<int>(nullable: false),
 					Activado = table.Column<bool>(nullable: false),
 					SincUbicaciones = table.Column<bool>(nullable: false),
 					SincUsuarios = table.Column<bool>(nullable: false),
-					Version = table.Column<int>(nullable: false, defaultValueSql: "((1))"),
+					Version = table.Column<int>(nullable: false),
 					Topic = table.Column<string>(maxLength: 250, nullable: true),
 					OPCIP = table.Column<string>(maxLength: 50, nullable: true),
 					OPCRate = table.Column<int>(nullable: true),
@@ -3270,11 +3407,12 @@ namespace VMES.Database.Vmes.Migrations
 					IsGeneral = table.Column<bool>(nullable: false),
 					BitVida = table.Column<DateTime>(type: "datetime", nullable: true),
 					Calidad = table.Column<int>(nullable: true),
+					DiscoveryUrl = table.Column<string>(maxLength: 256, nullable: true),
 					Endpoint = table.Column<string>(maxLength: 256, nullable: true),
 					DeviceAlias = table.Column<string>(maxLength: 256, nullable: true),
 					IsPrincipal = table.Column<bool>(nullable: false),
 					Maestro = table.Column<bool>(nullable: false),
-					GatewayId = table.Column<Guid>(nullable: true)
+					GatewayId = table.Column<Guid>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -3284,7 +3422,7 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.GatewayId,
 						principalTable: "Gateways",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -3294,7 +3432,7 @@ namespace VMES.Database.Vmes.Migrations
 					id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Descripción = table.Column<string>(type: "ntext", nullable: true),
+					Descripción = table.Column<string>(nullable: true),
 					Valor = table.Column<string>(maxLength: 50, nullable: true),
 					Tipo = table.Column<int>(nullable: true),
 					idAlertaUsuarioInformes = table.Column<int>(nullable: true)
@@ -3538,8 +3676,8 @@ namespace VMES.Database.Vmes.Migrations
 					OrdenCancelada = table.Column<bool>(nullable: true),
 					BitAux1 = table.Column<bool>(nullable: true),
 					BitAux2 = table.Column<bool>(nullable: true),
-					Variable1 = table.Column<decimal>(type: "decimal(12, 5)", nullable: true),
-					Variable2 = table.Column<decimal>(type: "decimal(12, 5)", nullable: true),
+					Variable1 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+					Variable2 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
 					Tratado = table.Column<bool>(nullable: true),
 					FechaTratado = table.Column<DateTime>(type: "datetime", nullable: true),
 					CodError = table.Column<int>(nullable: true),
@@ -3609,8 +3747,8 @@ namespace VMES.Database.Vmes.Migrations
 					OrdenCancelada = table.Column<bool>(nullable: true),
 					BitAux1 = table.Column<bool>(nullable: true),
 					BitAux2 = table.Column<bool>(nullable: true),
-					Variable1 = table.Column<decimal>(type: "decimal(12, 5)", nullable: true),
-					Variable2 = table.Column<decimal>(type: "decimal(12, 5)", nullable: true),
+					Variable1 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+					Variable2 = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
 					Tratado = table.Column<bool>(nullable: true),
 					FechaTratado = table.Column<DateTime>(type: "datetime", nullable: true),
 					CodError = table.Column<int>(nullable: true),
@@ -3639,7 +3777,8 @@ namespace VMES.Database.Vmes.Migrations
 						.Annotation("SqlServer:Identity", "1, 1"),
 					Tag = table.Column<string>(maxLength: 64, nullable: false),
 					OpcConfigId = table.Column<int>(nullable: false),
-					IdPlc = table.Column<int>(nullable: false)
+					IdPlc = table.Column<int>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -3658,161 +3797,162 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					TAG = table.Column<string>(maxLength: 50, nullable: true),
-					IOCfgParInIntensidadNominal = table.Column<float>(nullable: true),
-					IOCfgParInCosFi = table.Column<float>(nullable: true),
-					IOCfgParInTension = table.Column<int>(nullable: true),
-					IOCfgParInMonofasico = table.Column<bool>(nullable: true),
-					IOCfgParInControlActivoVF = table.Column<bool>(nullable: true),
-					IOCfgParInConsignaAvisoIAlta = table.Column<float>(nullable: true),
-					IOCfgParInConsignaAlarmaI = table.Column<float>(nullable: true),
-					IOCfgParInIntensidadEnVacio = table.Column<float>(nullable: true),
-					IOCfgParInHysteresisMotorEnVacio = table.Column<float>(nullable: true),
-					IOCfgParInPorcentajeSobrecarga = table.Column<int>(nullable: true),
-					IOCfgParInPorcentajeCargaMaxima = table.Column<int>(nullable: true),
-					IOCfgParInHysteresisCarga = table.Column<float>(nullable: true),
-					IOCfgParInConsignaAvisoTempRod1 = table.Column<float>(nullable: true),
-					IOCfgParInConsignaAvisoTempRod2 = table.Column<float>(nullable: true),
-					IOCfgParInConsignaAlarmaTempRod1 = table.Column<float>(nullable: true),
-					IOCfgParInConsignaAlarmaTempRod2 = table.Column<float>(nullable: true),
-					IOCfgParInVelocidadErrorMax = table.Column<float>(nullable: true),
-					IOCfgParInVelocidadEscalado = table.Column<float>(nullable: true),
-					IOCfgParInSeccion0 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion1 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion2 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion3 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion4 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion5 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion6 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion7 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion8 = table.Column<int>(nullable: true),
-					IOCfgParInSeccion9 = table.Column<int>(nullable: true),
-					IOCfgParInParametroAux2 = table.Column<float>(nullable: true),
-					IOCfgParInParametroAux3 = table.Column<float>(nullable: true),
-					IOCfgSeguridadesInDesactivarCM = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarOtrasSeguridades = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarAtasco = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarPTC = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarFalloVF = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarFalloAE = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarFalloAux = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarAlDB1 = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarAlDB2 = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarAlDB3 = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarAlDB4 = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInDesactivarDG = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInTipoDG = table.Column<int>(nullable: true),
-					IOCfgSeguridadesInTempRod1Habilitada = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInTempRod2Habilitada = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInActivarEncadenadoAuto = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInActivarEncadenadoMan = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInActivarAlVelocidadFBack = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInActivarPreavisoArranque = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInPermisoRearranqManTrasFallo = table.Column<bool>(nullable: true),
-					IOCfgSeguridadesInAccionFalloSuministro = table.Column<bool>(nullable: true),
-					IOCfgTiemposInTimEsperaCM = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayOtrasSeguridades = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayAtasco = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayTermistorPTC = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayFalloVF = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayFalloAE = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayFalloAux = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayAlDB1 = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayAlDB2 = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayAlDB3 = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayAlDB4 = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimMaximoOnDG = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimMaximoOffDG = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayActivarCargaMax = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayDesactivarCargaMax = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayIntensidadElevada = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimDelayIntensidadMaxima = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimInhibirCargaArranque = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimRetardoStopAuto = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimOMSiguienteMotor = table.Column<int>(nullable: true),
-					IOCfgTiemposInTimPreavisoArranque = table.Column<int>(nullable: true),
-					IOMantenOutHorasMarchaTotal = table.Column<float>(nullable: true),
-					IOMantenOutHorasMarchaParcial = table.Column<float>(nullable: true),
-					IOMantenOutHorasMarchaEnCarga = table.Column<float>(nullable: true),
-					IOMantenOutEnergiaEfectiva = table.Column<float>(nullable: true),
-					IOMantenOutEnergiaTotal = table.Column<float>(nullable: true),
-					IOMantenOutNumeroManiobras = table.Column<int>(nullable: true),
-					IOMantenOutContadorTotAlarmas = table.Column<int>(nullable: true),
-					IOMantenOutContAlFalloCM = table.Column<int>(nullable: true),
-					IOMantenOutContAlTermico = table.Column<int>(nullable: true),
-					IOMantenOutContAlDiferencial = table.Column<int>(nullable: true),
-					IOMantenOutContAlParoEmerg = table.Column<int>(nullable: true),
-					IOMantenOutContAlOtrasSeguridades = table.Column<int>(nullable: true),
-					IOMantenOutContAlTermistorPTC = table.Column<int>(nullable: true),
-					IOMantenOutContAlVF = table.Column<int>(nullable: true),
-					IOMantenOutContAlAE = table.Column<int>(nullable: true),
-					IOMantenOutContAlAux = table.Column<int>(nullable: true),
-					IOMantenOutContAlDB1 = table.Column<int>(nullable: true),
-					IOMantenOutContAlDB2 = table.Column<int>(nullable: true),
-					IOMantenOutContAlDB3 = table.Column<int>(nullable: true),
-					IOMantenOutContAlDB4 = table.Column<int>(nullable: true),
-					IOMantenOutContAlDG = table.Column<int>(nullable: true),
-					IOMantenOutContAlAtasco = table.Column<int>(nullable: true),
-					IOMantenOutContAlIMax = table.Column<int>(nullable: true),
-					IOMantenOutContAlIElevada = table.Column<int>(nullable: true),
-					IOMantenOutContAlTempMaxRod1 = table.Column<int>(nullable: true),
-					IOMantenOutContAlTempElevRod1 = table.Column<int>(nullable: true),
-					IOMantenOutContAlTempMaxRod2 = table.Column<int>(nullable: true),
-					IOMantenOutContAlTempElevRod2 = table.Column<int>(nullable: true),
-					IOMantenOutContAlVelocidad = table.Column<int>(nullable: true),
-					IOMantenOutContAlComunica = table.Column<int>(nullable: true),
-					IOMantenOutContAlDeshabil = table.Column<int>(nullable: true),
-					IOMantenInResetHorasTotal = table.Column<bool>(nullable: true),
-					IOMantenInResetHorasParcial = table.Column<bool>(nullable: true),
-					IOMantenInResetHorasEnCarga = table.Column<bool>(nullable: true),
-					IOMantenInResetEnergias = table.Column<bool>(nullable: true),
-					IOMantenInResetContadorManiobras = table.Column<bool>(nullable: true),
-					IOMantenInResetContadorAlarmas = table.Column<bool>(nullable: true),
-					LeerEnPLC = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
-					GrabarEnPLC = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
-					idPLC = table.Column<int>(nullable: true),
-					MedirKW = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
-					NombreMes = table.Column<string>(maxLength: 50, nullable: true),
+					TAG = table.Column<string>(maxLength: 64, nullable: false),
+					OpcConfigId = table.Column<int>(nullable: false),
+					idPLC = table.Column<int>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false),
 					AlertaConsumoAlto = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
 					AlertaConsumoExcesivo = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
-					IsMaximetro = table.Column<bool>(nullable: true),
-					MaximetroGeneral = table.Column<bool>(nullable: true),
-					InicioVentana = table.Column<DateTime>(type: "datetime", nullable: true),
-					ValorVentanaMaximetro = table.Column<decimal>(type: "decimal(12, 3)", nullable: true),
-					MinsMaxVentana = table.Column<int>(nullable: true),
-					IOMantenOutContAlLockOut = table.Column<int>(nullable: true),
-					IOMantenOutContAlPuertaAbierta = table.Column<int>(nullable: true),
-					IOMantenOutContAlInversor = table.Column<int>(nullable: true),
-					IOMantenInResetContadores = table.Column<bool>(nullable: true),
-					IOMantenInResetContadorEnergiaParciales = table.Column<bool>(nullable: true),
-					IOMantenInResetContadorEnergiaTotales = table.Column<bool>(nullable: true),
-					IOMantenInResetMaxPotenciasIntensidad = table.Column<bool>(nullable: true),
-					IOMantenOutPotenciaActiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutPotenciaReactiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutPotenciaAparente = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutPotenciaActivaEfectiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutPotenciaReactivaEfectiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutPotenciaAparenteEfectiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutEnergiaEnCargaTotales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutEnergiaEnVacioTotales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutEnergiaEnCargaParciales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutEnergiaEnVacioParciales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutMemoriaMaxPotenciaActiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutMemoriaMaxPotenciaAparente = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutMemoriaMaxPotenciaReactiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IOMantenOutMemoriaMaxIntensidad = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					EnergiaEfectivaAnterior = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
 					EnergiaEnCargaAnterior = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
 					EnergiaEnVacioAnterior = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
 					EnergiaTotalAnterior = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					EnergiaEfectivaAnterior = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
-					IdOpc = table.Column<int>(nullable: true),
-					OpcConfigId = table.Column<int>(nullable: true)
+					GrabarEnPLC = table.Column<bool>(type: "bit", nullable: true, defaultValueSql: "((0))"),
+					IOCfgParInConsignaAlarmaI = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInConsignaAlarmaTempRod1 = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInConsignaAlarmaTempRod2 = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInConsignaAvisoIAlta = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInConsignaAvisoTempRod1 = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInConsignaAvisoTempRod2 = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInControlActivoVF = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgParInCosFi = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInHysteresisCarga = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInHysteresisMotorEnVacio = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInIntensidadEnVacio = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInIntensidadNominal = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInMonofasico = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgParInParametroAux2 = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInParametroAux3 = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInPorcentajeCargaMaxima = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInPorcentajeSobrecarga = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion0 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion1 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion2 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion3 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion4 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion5 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion6 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion7 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion8 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInSeccion9 = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInTension = table.Column<int>(type: "int", nullable: true),
+					IOCfgParInVelocidadErrorMax = table.Column<float>(type: "real", nullable: true),
+					IOCfgParInVelocidadEscalado = table.Column<float>(type: "real", nullable: true),
+					IOCfgSeguridadesInAccionFalloSuministro = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInActivarAlVelocidadFBack = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInActivarEncadenadoAuto = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInActivarEncadenadoMan = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInActivarPreavisoArranque = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarAlDB1 = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarAlDB2 = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarAlDB3 = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarAlDB4 = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarAtasco = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarCM = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarDG = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarFalloAE = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarFalloAux = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarFalloVF = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarOtrasSeguridades = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInDesactivarPTC = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInPermisoRearranqManTrasFallo = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInTempRod1Habilitada = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInTempRod2Habilitada = table.Column<bool>(type: "bit", nullable: true),
+					IOCfgSeguridadesInTipoDG = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayActivarCargaMax = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayAlDB1 = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayAlDB2 = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayAlDB3 = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayAlDB4 = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayAtasco = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayDesactivarCargaMax = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayFalloAE = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayFalloAux = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayFalloVF = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayIntensidadElevada = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayIntensidadMaxima = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayOtrasSeguridades = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimDelayTermistorPTC = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimEsperaCM = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimInhibirCargaArranque = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimMaximoOffDG = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimMaximoOnDG = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimOMSiguienteMotor = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimPreavisoArranque = table.Column<int>(type: "int", nullable: true),
+					IOCfgTiemposInTimRetardoStopAuto = table.Column<int>(type: "int", nullable: true),
+					IOMantenInResetContadorAlarmas = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetContadorEnergiaParciales = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetContadorEnergiaTotales = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetContadorManiobras = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetContadores = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetEnergias = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetHorasEnCarga = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetHorasParcial = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetHorasTotal = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenInResetMaxPotenciasIntensidad = table.Column<bool>(type: "bit", nullable: true),
+					IOMantenOutContAlAE = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlAtasco = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlAux = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlComunica = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDB1 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDB2 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDB3 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDB4 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDG = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDeshabil = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlDiferencial = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlFalloCM = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlIElevada = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlIMax = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlInversor = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlLockOut = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlOtrasSeguridades = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlParoEmerg = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlPuertaAbierta = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlTempElevRod1 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlTempElevRod2 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlTempMaxRod1 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlTempMaxRod2 = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlTermico = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlTermistorPTC = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlVF = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContAlVelocidad = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutContadorTotAlarmas = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutEnergiaEfectiva = table.Column<float>(type: "real", nullable: true),
+					IOMantenOutEnergiaEnCargaParciales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutEnergiaEnCargaTotales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutEnergiaEnVacioParciales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutEnergiaEnVacioTotales = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutEnergiaTotal = table.Column<float>(type: "real", nullable: true),
+					IOMantenOutHorasMarchaEnCarga = table.Column<float>(type: "real", nullable: true),
+					IOMantenOutHorasMarchaParcial = table.Column<float>(type: "real", nullable: true),
+					IOMantenOutHorasMarchaTotal = table.Column<float>(type: "real", nullable: true),
+					IOMantenOutMemoriaMaxIntensidad = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutMemoriaMaxPotenciaActiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutMemoriaMaxPotenciaAparente = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutMemoriaMaxPotenciaReactiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutNumeroManiobras = table.Column<int>(type: "int", nullable: true),
+					IOMantenOutPotenciaActiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutPotenciaActivaEfectiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutPotenciaAparente = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutPotenciaAparenteEfectiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutPotenciaReactiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IOMantenOutPotenciaReactivaEfectiva = table.Column<decimal>(type: "decimal(18, 7)", nullable: true),
+					IdOpc = table.Column<int>(type: "int", nullable: true),
+					InicioVentana = table.Column<DateTime>(type: "datetime", nullable: true),
+					IsMaximetro = table.Column<bool>(type: "bit", nullable: true),
+					LeerEnPLC = table.Column<bool>(type: "bit", nullable: true, defaultValueSql: "((0))"),
+					MaximetroGeneral = table.Column<bool>(type: "bit", nullable: true),
+					MedirKW = table.Column<bool>(type: "bit", nullable: true, defaultValueSql: "((0))"),
+					MinsMaxVentana = table.Column<int>(type: "int", nullable: true),
+					NombreMes = table.Column<string>(type: "nvarchar(50)", nullable: true),
+					ValorVentanaMaximetro = table.Column<decimal>(type: "decimal(12, 3)", nullable: true)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Motores", x => x.Id);
 					table.ForeignKey(
-						name: "FK__Motores__OpcConf__5634BA94",
+						name: "FK_Motores_OpcConfig_OpcConfigId",
 						column: x => x.OpcConfigId,
 						principalTable: "OpcConfig",
 						principalColumn: "Id",
@@ -3956,13 +4096,15 @@ namespace VMES.Database.Vmes.Migrations
 					FechaEntrega = table.Column<DateTime>(type: "date", nullable: true),
 					idDomicilio = table.Column<int>(nullable: true),
 					Estado = table.Column<int>(nullable: true),
-					Comentario = table.Column<string>(type: "ntext", nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
+					Comentario = table.Column<string>(nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
 					FechaInicio = table.Column<DateTime>(type: "datetime", nullable: true),
 					FechaFin = table.Column<DateTime>(type: "datetime", nullable: true),
 					RefERP = table.Column<string>(maxLength: 50, nullable: true),
 					isImport = table.Column<bool>(nullable: true),
-					Impresiones = table.Column<int>(nullable: false)
+					Impresiones = table.Column<int>(nullable: false),
+					Exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -4184,11 +4326,18 @@ namespace VMES.Database.Vmes.Migrations
 					ImpresoraDefecto = table.Column<string>(maxLength: 50, nullable: true),
 					NumCopias = table.Column<int>(nullable: false, defaultValueSql: "((1))"),
 					Visible = table.Column<bool>(nullable: false, defaultValueSql: "((1))"),
-					Habilitado = table.Column<bool>(nullable: false, defaultValueSql: "((1))")
+					Habilitado = table.Column<bool>(nullable: false, defaultValueSql: "((1))"),
+					DefaultPrinterId = table.Column<Guid>(nullable: true)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_InformesLibUsuarios", x => x.Id);
+					table.ForeignKey(
+						name: "FK_InformesLibUsuarios_Printers_DefaultPrinterId",
+						column: x => x.DefaultPrinterId,
+						principalTable: "Printers",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_InformesLibUsuarios_InformesLib",
 						column: x => x.IdInforme,
@@ -4432,6 +4581,39 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "GMAO_ElementReviewTasks",
+				columns: table => new
+				{
+					Id = table.Column<Guid>(nullable: false),
+					ElementId = table.Column<int>(nullable: false),
+					TaskId = table.Column<int>(nullable: false),
+					TriggerType = table.Column<byte>(nullable: false),
+					Comments = table.Column<string>(maxLength: 256, nullable: true),
+					CreatedDate = table.Column<DateTime>(nullable: false, defaultValueSql: "GETUTCDATE()"),
+					UpdatedDate = table.Column<DateTime>(nullable: false, defaultValueSql: "GETUTCDATE()"),
+					ResetDate = table.Column<DateTime>(nullable: false, defaultValueSql: "GETDATE()"),
+					IsEnabled = table.Column<bool>(nullable: false),
+					Threshold = table.Column<int>(nullable: false),
+					Counter = table.Column<int>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_GMAO_ElementReviewTasks", x => x.Id);
+					table.ForeignKey(
+						name: "FK_GMAO_ElementReviewTasks_GMAO_Elementos_ElementId",
+						column: x => x.ElementId,
+						principalTable: "GMAO_Elementos",
+						principalColumn: "id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_GMAO_ElementReviewTasks_GMAO_ParadasConfiguracion_TaskId",
+						column: x => x.TaskId,
+						principalTable: "GMAO_ParadasConfiguracion",
+						principalColumn: "id",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "GMAO_ElemIntervenciones",
 				columns: table => new
 				{
@@ -4442,8 +4624,9 @@ namespace VMES.Database.Vmes.Migrations
 					FechaFinal = table.Column<DateTime>(type: "datetime", nullable: true),
 					IdOperarioResponsable = table.Column<int>(nullable: true),
 					IDDepartamento = table.Column<int>(nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
-					Descripcion = table.Column<string>(type: "ntext", nullable: true),
+					Referencia = table.Column<string>(nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
+					Descripcion = table.Column<string>(nullable: true),
 					IdParadaConfiguracion = table.Column<int>(nullable: true),
 					IsRevisionElemento = table.Column<bool>(nullable: true),
 					Cerrada = table.Column<bool>(nullable: true)
@@ -4759,8 +4942,9 @@ namespace VMES.Database.Vmes.Migrations
 					IdIntervencion = table.Column<int>(nullable: true),
 					EnMantenimiento = table.Column<bool>(nullable: true),
 					IdMantenimiento = table.Column<int>(nullable: true),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
-					Descripcion = table.Column<string>(type: "ntext", nullable: true)
+					Observaciones = table.Column<string>(nullable: true),
+					Descripcion = table.Column<string>(nullable: true),
+					ReviewTaskId = table.Column<Guid>(nullable: true)
 				},
 				constraints: table =>
 				{
@@ -4776,6 +4960,12 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.IdOperario,
 						principalTable: "GMAO_Operarios",
 						principalColumn: "id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_GMAO_ElemIntervencionesTrabajos_GMAO_ElementReviewTasks_ReviewTaskId",
+						column: x => x.ReviewTaskId,
+						principalTable: "GMAO_ElementReviewTasks",
+						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 				});
 
@@ -4810,45 +5000,6 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "Medicaciones",
-				columns: table => new
-				{
-					Id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Referencia = table.Column<string>(maxLength: 50, nullable: true),
-					Nombre = table.Column<string>(maxLength: 50, nullable: true),
-					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					Frecuencia = table.Column<int>(nullable: true),
-					Duracion = table.Column<int>(nullable: true),
-					TiempoEspera = table.Column<int>(nullable: true),
-					Conservacion = table.Column<int>(nullable: true),
-					Total = table.Column<int>(nullable: true),
-					Cliente = table.Column<int>(nullable: true),
-					Afeccion = table.Column<int>(nullable: true),
-					Estado = table.Column<int>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
-					Observaciones = table.Column<string>(maxLength: 254, nullable: true),
-					Indicaciones = table.Column<string>(maxLength: 254, nullable: true),
-					NaturalezaTratamiento = table.Column<string>(maxLength: 254, nullable: true),
-					Literal = table.Column<string>(maxLength: 50, nullable: true),
-					TiempoEsperaLeche = table.Column<int>(nullable: true),
-					TiempoEsperaHuevos = table.Column<int>(nullable: true),
-					idProducto = table.Column<int>(nullable: true),
-					StockIngredientes = table.Column<bool>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_Medicaciones", x => x.Id);
-					table.ForeignKey(
-						name: "FK_Medicaciones_Afecciones",
-						column: x => x.Afeccion,
-						principalTable: "Afecciones",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
 				name: "Productos",
 				columns: table => new
 				{
@@ -4868,7 +5019,7 @@ namespace VMES.Database.Vmes.Migrations
 					Envase = table.Column<int>(nullable: true),
 					Referencia = table.Column<string>(maxLength: 20, nullable: true),
 					Referencia2 = table.Column<string>(maxLength: 20, nullable: true),
-					Importado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
 					Humedad = table.Column<float>(nullable: true),
 					PesoEspecifico = table.Column<float>(nullable: true),
 					Entradas = table.Column<int>(nullable: true),
@@ -4884,7 +5035,7 @@ namespace VMES.Database.Vmes.Migrations
 					Caducidad = table.Column<int>(nullable: true),
 					Refrescado = table.Column<bool>(nullable: true),
 					Receptable = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
 					Medicamento = table.Column<bool>(nullable: true),
 					AplicacionDirecta = table.Column<bool>(nullable: true),
 					Modulo = table.Column<int>(nullable: true),
@@ -4921,7 +5072,8 @@ namespace VMES.Database.Vmes.Migrations
 					DestinoDefecto = table.Column<int>(nullable: true),
 					PartidaArancelariaFabricacion = table.Column<string>(maxLength: 50, nullable: true),
 					PartidaArancelariaCompras = table.Column<string>(maxLength: 50, nullable: true),
-					PlantillaCabMolturacion = table.Column<int>(nullable: true)
+					PlantillaCabMolturacion = table.Column<int>(nullable: true),
+					NombreScada = table.Column<string>(maxLength: 20, nullable: true)
 				},
 				constraints: table =>
 				{
@@ -5004,29 +5156,29 @@ namespace VMES.Database.Vmes.Migrations
 				name: "ComponentesActivos",
 				columns: table => new
 				{
-					Id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
 					Producto = table.Column<int>(nullable: false),
-					Cantidad = table.Column<float>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
-					IdCompActivosLista = table.Column<int>(nullable: true)
+					Orden = table.Column<int>(nullable: false),
+					Nombre = table.Column<string>(maxLength: 120, nullable: false),
+					Cantidad = table.Column<float>(nullable: false),
+					Unidad = table.Column<int>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
+					Exportado = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
-					table.PrimaryKey("PK_ComponentesActivos", x => x.Id);
+					table.PrimaryKey("PK_ComponentesActivos", x => new { x.Producto, x.Orden });
 					table.ForeignKey(
-						name: "FK_ComponentesActivos_CompActivosLista",
-						column: x => x.IdCompActivosLista,
-						principalTable: "CompActivosLista",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_ComponentesActivos_Productos",
+						name: "FK_ComponentesActivos_Productos_Producto",
 						column: x => x.Producto,
 						principalTable: "Productos",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_ComponentesActivos_Unidades_Unidad",
+						column: x => x.Unidad,
+						principalTable: "Unidades",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
 				});
 
 			migrationBuilder.CreateTable(
@@ -5160,9 +5312,10 @@ namespace VMES.Database.Vmes.Migrations
 					Caducidad = table.Column<DateTime>(type: "datetime", nullable: true),
 					Estado = table.Column<int>(nullable: true),
 					Cantidad = table.Column<float>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
+					Exportado = table.Column<bool>(nullable: false),
 					PrecioCoste = table.Column<float>(nullable: true),
+					Prioritario = table.Column<bool>(nullable: false),
 					Modificado = table.Column<bool>(nullable: true),
 					Medicacion = table.Column<int>(nullable: true),
 					Mezclado = table.Column<bool>(nullable: true),
@@ -5208,39 +5361,63 @@ namespace VMES.Database.Vmes.Migrations
 				name: "MedicacionesIngredientes",
 				columns: table => new
 				{
-					Id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					Medicacion = table.Column<int>(nullable: true),
-					Producto = table.Column<int>(nullable: true),
-					Cantidad = table.Column<float>(nullable: true),
-					Unidad = table.Column<int>(nullable: true),
-					Porcentaje = table.Column<float>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
-					AplicacionDirecta = table.Column<bool>(nullable: true),
-					Produccion = table.Column<bool>(nullable: true)
+					Medicacion = table.Column<int>(nullable: false),
+					Producto = table.Column<int>(nullable: false),
+					Cantidad = table.Column<float>(nullable: false),
+					Unidad = table.Column<int>(nullable: false),
+					Porcentaje = table.Column<float>(nullable: false),
+					Importado = table.Column<bool>(nullable: false),
+					Exportado = table.Column<bool>(nullable: false),
+					AplicacionDirecta = table.Column<bool>(nullable: false),
+					Produccion = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
-					table.PrimaryKey("PK_MedicacionesIngredientes", x => x.Id);
+					table.PrimaryKey("PK_MedicacionesIngredientes", x => new { x.Medicacion, x.Producto });
 					table.ForeignKey(
-						name: "FK_MedicacionesIngredientes_Medicaciones",
+						name: "FK_MedicacionesIngredientes_Medicaciones_Medicacion",
 						column: x => x.Medicacion,
 						principalTable: "Medicaciones",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
-						name: "FK_MedicacionesIngredientes_Productos",
+						name: "FK_MedicacionesIngredientes_Productos_Producto",
 						column: x => x.Producto,
 						principalTable: "Productos",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
-						name: "FK_MedicacionesIngredientes_Unidades",
+						name: "FK_MedicacionesIngredientes_Unidades_Unidad",
 						column: x => x.Unidad,
 						principalTable: "Unidades",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "ProductosEnvasesEtiquetas",
+				columns: table => new
+				{
+					ProductoId = table.Column<int>(nullable: false),
+					EnvaseId = table.Column<int>(nullable: false),
+					Type = table.Column<byte>(nullable: false),
+					Code = table.Column<string>(maxLength: 128, nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_ProductosEnvasesEtiquetas", x => new { x.ProductoId, x.EnvaseId });
+					table.ForeignKey(
+						name: "FK_ProductosEnvasesEtiquetas_Envases_EnvaseId",
+						column: x => x.EnvaseId,
+						principalTable: "Envases",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_ProductosEnvasesEtiquetas_Productos_ProductoId",
+						column: x => x.ProductoId,
+						principalTable: "Productos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -5329,14 +5506,14 @@ namespace VMES.Database.Vmes.Migrations
 					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
 					Estado = table.Column<int>(nullable: true),
 					UltimaFecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					Importado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
 					Departamento = table.Column<int>(nullable: true),
 					Entrega = table.Column<DateTime>(type: "datetime", nullable: true),
 					Comentario = table.Column<string>(maxLength: 100, nullable: true),
 					Impresa = table.Column<bool>(nullable: true),
 					Refrescado = table.Column<bool>(nullable: true),
 					Fin = table.Column<DateTime>(type: "datetime", nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
 					Referencia = table.Column<string>(maxLength: 20, nullable: true),
 					Numero = table.Column<int>(nullable: true),
 					idContrato = table.Column<int>(nullable: true),
@@ -5404,7 +5581,9 @@ namespace VMES.Database.Vmes.Migrations
 					CampoLibre1 = table.Column<string>(maxLength: 50, nullable: true),
 					CampoLibre2 = table.Column<string>(maxLength: 50, nullable: true),
 					idPuntoDescarga = table.Column<int>(nullable: true),
-					FechaFin = table.Column<DateTime>(type: "datetime", nullable: true)
+					FechaFin = table.Column<DateTime>(type: "datetime", nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -5511,59 +5690,6 @@ namespace VMES.Database.Vmes.Migrations
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 				});
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [StockEnUbicacion] 
-				(
-					-- Add the parameters for the function here
-					@ubi int,
-					@NoNegativos bit
-				)
-				RETURNS decimal(18,5)
-				AS
-				BEGIN
-					DECLARE @ResultVar decimal(18,5)
-
-
-					if @NoNegativos = 1
-					begin
-						SELECT @ResultVar =  sum(cantidad) FROM Stocks WHERE Ubicacion  =@ubi and (Estado = 1 or Estado=2) and Cantidad >0
-						RETURN @ResultVar
-					end
-
-						SELECT @ResultVar =  sum(cantidad) FROM Stocks WHERE Ubicacion  =@ubi and (Estado = 1 or Estado=2)
-						RETURN @ResultVar
-
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [LoteEnUbicacion] 
-				(
-					-- Add the parameters for the function here
-					@ubi int
-				)
-				RETURNS nvarchar(50)
-				AS
-				BEGIN
-					DECLARE @ResultVar nvarchar(50);
-	
-					select top 1 @ResultVar = L.Nombre 
-						from stocks as s
-						inner join Lotes as L on L.id = s.Lote 
-						where s.Ubicacion = @ubi 
-							and (s.Estado =1)
-						order by s.Fecha asc;
-
-
-					RETURN @ResultVar
-
-				END
-
-				GO
-			");
 
 			migrationBuilder.CreateTable(
 				name: "Ubicaciones",
@@ -5738,6 +5864,59 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "VentasLiniasMedicaciones",
+				columns: table => new
+				{
+					id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					idVentaLinia = table.Column<int>(nullable: false),
+					idEnvase = table.Column<int>(nullable: true),
+					idFormato = table.Column<int>(nullable: true),
+					idUnidad = table.Column<int>(nullable: false),
+					Fecha = table.Column<DateTime>(nullable: true),
+					Cantidad = table.Column<decimal>(type: "decimal(18, 3)", nullable: false),
+					Bultos = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
+					Estado = table.Column<int>(nullable: true),
+					Precio = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
+					PrecioUnidad = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
+					ProductoId = table.Column<int>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_VentasLiniasMedicaciones", x => x.id);
+					table.ForeignKey(
+						name: "FK_VentasLiniasMedicaciones_Productos_ProductoId",
+						column: x => x.ProductoId,
+						principalTable: "Productos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_VentasLiniasMedicaciones_Envases",
+						column: x => x.idEnvase,
+						principalTable: "Envases",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_VentasLiniasMedicaciones_Formatos",
+						column: x => x.idFormato,
+						principalTable: "Formatos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_VentasLiniasMedicaciones_Unidades",
+						column: x => x.idUnidad,
+						principalTable: "Unidades",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_VentasLiniasMedicaciones_VentasLinias",
+						column: x => x.idVentaLinia,
+						principalTable: "VentasLinias",
+						principalColumn: "id",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "VentasLiniasPuntosDescarga",
 				columns: table => new
 				{
@@ -5805,14 +5984,60 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "BufferERPSolicitudTraspaso",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					LoteId = table.Column<int>(nullable: false),
+					DestinoId = table.Column<int>(nullable: false),
+					OrigenId = table.Column<int>(nullable: false),
+					UsuarioId = table.Column<int>(nullable: false),
+					Cantidad = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+					FechaSolicitud = table.Column<DateTime>(nullable: false),
+					Estado = table.Column<int>(nullable: false),
+					Respuesta = table.Column<int>(nullable: true),
+					FechaRespuesta = table.Column<DateTime>(nullable: true),
+					TxtErrores = table.Column<string>(maxLength: 50, nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_BufferERPSolicitudTraspaso", x => x.Id);
+					table.ForeignKey(
+						name: "FK_BufferERPSolicitudTraspaso_Ubicaciones_DestinoId",
+						column: x => x.DestinoId,
+						principalTable: "Ubicaciones",
+						principalColumn: "Id");
+					table.ForeignKey(
+						name: "FK_BufferERPSolicitudTraspaso_Lotes_LoteId",
+						column: x => x.LoteId,
+						principalTable: "Lotes",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_BufferERPSolicitudTraspaso_Ubicaciones_OrigenId",
+						column: x => x.OrigenId,
+						principalTable: "Ubicaciones",
+						principalColumn: "Id");
+					table.ForeignKey(
+						name: "FK_BufferERPSolicitudTraspaso_Usuarios_UsuarioId",
+						column: x => x.UsuarioId,
+						principalTable: "Usuarios",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "Caudales",
 				columns: table => new
 				{
 					ProductoId = table.Column<int>(nullable: false),
 					UbicacionId = table.Column<int>(nullable: false),
 					Mode = table.Column<byte>(nullable: false),
-					CaudalEntrada = table.Column<decimal>(type: "decimal(18, 5)", nullable: false),
-					CaudalSalida = table.Column<decimal>(type: "decimal(18, 5)", nullable: false)
+					CaudalEntrada = table.Column<decimal>(type: "decimal(18, 3)", nullable: false),
+					CaudalSalida = table.Column<decimal>(type: "decimal(18, 3)", nullable: false),
+					PorcentajeAjusteAutomaticoMaximo = table.Column<decimal>(type: "decimal(18, 2)", nullable: false, defaultValueSql: "5"),
+					PorcentajeAjusteMaximo = table.Column<decimal>(type: "decimal(18, 2)", nullable: false, defaultValueSql: "10")
 				},
 				constraints: table =>
 				{
@@ -5964,7 +6189,8 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					UbicacionId = table.Column<int>(nullable: false),
 					OpcConfigId = table.Column<int>(nullable: false),
-					IdPlc = table.Column<int>(nullable: false)
+					IdPlc = table.Column<int>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -6010,11 +6236,26 @@ namespace VMES.Database.Vmes.Migrations
 					idProducto = table.Column<int>(nullable: true),
 					CantidadPienso = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
 					proporcionDiaria = table.Column<decimal>(type: "decimal(8, 3)", nullable: true),
-					AutoGenerada = table.Column<bool>(nullable: true)
+					AutoGenerada = table.Column<bool>(nullable: true),
+					MedicacionId = table.Column<int>(nullable: true),
+					EspecieId = table.Column<int>(nullable: true),
+					Estado = table.Column<int>(nullable: false)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Recetas", x => x.id);
+					table.ForeignKey(
+						name: "FK_Recetas_Especies_EspecieId",
+						column: x => x.EspecieId,
+						principalTable: "Especies",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_Recetas_Medicaciones_MedicacionId",
+						column: x => x.MedicacionId,
+						principalTable: "Medicaciones",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_Recetas_Afecciones",
 						column: x => x.idAfeccion,
@@ -6059,8 +6300,8 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					idReceta = table.Column<int>(nullable: true),
-					idMedicamento = table.Column<int>(nullable: true),
+					idReceta = table.Column<int>(nullable: false),
+					ProductoId = table.Column<int>(nullable: false),
 					Cantidad = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
 					Porcentaje = table.Column<decimal>(type: "decimal(8, 5)", nullable: true)
 				},
@@ -6068,13 +6309,13 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					table.PrimaryKey("PK_RecetasLineas", x => x.id);
 					table.ForeignKey(
-						name: "FK_RecetasLineas_Medicaciones",
-						column: x => x.idMedicamento,
-						principalTable: "Medicaciones",
+						name: "FK_RecetasLineas_Productos_ProductoId",
+						column: x => x.ProductoId,
+						principalTable: "Productos",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.SetNull);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
-						name: "FK_RecetasLineas_Recetas",
+						name: "FK_RecetasLineas_Recetas_idReceta",
 						column: x => x.idReceta,
 						principalTable: "Recetas",
 						principalColumn: "id",
@@ -6164,7 +6405,8 @@ namespace VMES.Database.Vmes.Migrations
 					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
 					idModulo = table.Column<int>(nullable: true),
 					Autorizada = table.Column<bool>(nullable: true),
-					exportado = table.Column<bool>(nullable: true),
+					exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false),
 					ErrorExport = table.Column<string>(maxLength: 200, nullable: true),
 					CamionBanera = table.Column<bool>(nullable: true),
 					EstadoTarjeta = table.Column<int>(nullable: true),
@@ -6178,7 +6420,8 @@ namespace VMES.Database.Vmes.Migrations
 					IdMuestra = table.Column<int>(nullable: true),
 					AnadirStockPesaje = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					idOrigenProv = table.Column<int>(nullable: true),
-					TaraAplicada = table.Column<bool>(nullable: true, defaultValueSql: "((0))")
+					TaraAplicada = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
+					ReferenciaErp = table.Column<string>(maxLength: 32, nullable: true)
 				},
 				constraints: table =>
 				{
@@ -6554,7 +6797,7 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					Modulo = table.Column<int>(nullable: true),
+					Modulo = table.Column<int>(nullable: false),
 					Nombre = table.Column<string>(maxLength: 50, nullable: true),
 					Sesion = table.Column<int>(nullable: true),
 					Capacidad = table.Column<int>(nullable: true),
@@ -6602,7 +6845,8 @@ namespace VMES.Database.Vmes.Migrations
 					IdCicloAnterior = table.Column<int>(nullable: true),
 					IdBascula = table.Column<int>(nullable: true),
 					OpcConfigId = table.Column<int>(nullable: true),
-					IdPLC = table.Column<int>(nullable: true),
+					IdPLC = table.Column<int>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false),
 					PLCOrdenNumActual = table.Column<int>(nullable: true),
 					PLCCicloNumActual = table.Column<int>(nullable: true),
 					PLCSecuenciaNumActual = table.Column<int>(nullable: true),
@@ -6650,7 +6894,7 @@ namespace VMES.Database.Vmes.Migrations
 					PLCIndicadoresId19 = table.Column<int>(nullable: true),
 					ModoAsumido = table.Column<int>(nullable: true),
 					ParticionarDosificacion = table.Column<bool>(nullable: true),
-					ModoMultidosificacion = table.Column<bool>(nullable: true),
+					ModoMultidosificacion = table.Column<bool>(nullable: false),
 					MinTolerancia = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
 					MaxTolerancia = table.Column<decimal>(type: "decimal(15, 5)", nullable: true),
 					idPlantillaOculta = table.Column<int>(nullable: true),
@@ -6684,12 +6928,6 @@ namespace VMES.Database.Vmes.Migrations
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Medidores", x => x.Id);
-					table.ForeignKey(
-						name: "FK_Medidores_OEEEstadosTipo",
-						column: x => x.EstadoForzado,
-						principalTable: "OEEEstadosTipo",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_Medidores_FamiliasMedidor",
 						column: x => x.FamiliaMedidor,
@@ -6758,30 +6996,6 @@ namespace VMES.Database.Vmes.Migrations
 					table.ForeignKey(
 						name: "FK_Caminos_Medidores",
 						column: x => x.MedidorId,
-						principalTable: "Medidores",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "OEEEstadosMedidores",
-				columns: table => new
-				{
-					idEstadoTipo = table.Column<int>(nullable: false),
-					idMedidor = table.Column<int>(nullable: false)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OEEEstadosMedidores", x => new { x.idEstadoTipo, x.idMedidor });
-					table.ForeignKey(
-						name: "FK_OEEEstadosMedidores_OEEEstadosTipo",
-						column: x => x.idEstadoTipo,
-						principalTable: "OEEEstadosTipo",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstadosMedidores_Medidores",
-						column: x => x.idMedidor,
 						principalTable: "Medidores",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
@@ -6878,7 +7092,9 @@ namespace VMES.Database.Vmes.Migrations
 					Proponer = table.Column<bool>(nullable: true),
 					Activo = table.Column<bool>(nullable: true, defaultValueSql: "((1))"),
 					PrioridadDosificacion = table.Column<int>(nullable: true),
-					Capacidad = table.Column<decimal>(type: "decimal(18, 2)", nullable: true)
+					ProductoStockObligatorio = table.Column<bool>(nullable: false),
+					Capacidad = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
+					SeleccionCargaAutomatica = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -6990,6 +7206,43 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "ProductoMedidorCamino",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					CaminoId = table.Column<int>(nullable: false),
+					MedidorId = table.Column<int>(nullable: false),
+					ProductoId = table.Column<int>(nullable: false),
+					Activo = table.Column<bool>(nullable: false),
+					Tipo = table.Column<byte>(nullable: false),
+					FechaCreacion = table.Column<DateTime>(nullable: false, defaultValueSql: "GETDATE()"),
+					FechaEdicion = table.Column<DateTime>(nullable: false, defaultValueSql: "GETDATE()")
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_ProductoMedidorCamino", x => x.Id);
+					table.ForeignKey(
+						name: "FK_ProductoMedidorCamino_Caminos_CaminoId",
+						column: x => x.CaminoId,
+						principalTable: "Caminos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_ProductoMedidorCamino_Medidores_MedidorId",
+						column: x => x.MedidorId,
+						principalTable: "Medidores",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_ProductoMedidorCamino_Productos_ProductoId",
+						column: x => x.ProductoId,
+						principalTable: "Productos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "MedidoresDosificaciones",
 				columns: table => new
 				{
@@ -7025,6 +7278,41 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "NetAlarmasTiposRespuestasOrigenes",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					NetAlarmasTipoId = table.Column<int>(nullable: false),
+					NetAlarmasRespuestaId = table.Column<int>(nullable: false),
+					OrigenId = table.Column<int>(nullable: false),
+					Accion = table.Column<byte>(nullable: false),
+					Activo = table.Column<bool>(nullable: false)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_NetAlarmasTiposRespuestasOrigenes", x => x.Id);
+					table.ForeignKey(
+						name: "FK_NetAlarmasTiposRespuestasOrigenes_NetAlarmasRespuestas_NetAlarmasRespuestaId",
+						column: x => x.NetAlarmasRespuestaId,
+						principalTable: "NetAlarmasRespuestas",
+						principalColumn: "id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_NetAlarmasTiposRespuestasOrigenes_NetAlarmasTipos_NetAlarmasTipoId",
+						column: x => x.NetAlarmasTipoId,
+						principalTable: "NetAlarmasTipos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_NetAlarmasTiposRespuestasOrigenes_Origenes_OrigenId",
+						column: x => x.OrigenId,
+						principalTable: "Origenes",
+						principalColumn: "ID",
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "SalidasLinias",
 				columns: table => new
 				{
@@ -7032,6 +7320,7 @@ namespace VMES.Database.Vmes.Migrations
 						.Annotation("SqlServer:Identity", "1, 1"),
 					idSalidas = table.Column<int>(nullable: true),
 					idProducto = table.Column<int>(nullable: true),
+					MedicacionId = table.Column<int>(nullable: true),
 					idFormato = table.Column<int>(nullable: true),
 					idEnvase = table.Column<int>(nullable: true),
 					idUnidad = table.Column<int>(nullable: true),
@@ -7081,7 +7370,8 @@ namespace VMES.Database.Vmes.Migrations
 					CampoLibre2 = table.Column<string>(maxLength: 50, nullable: true),
 					LedViajeAsignado = table.Column<int>(nullable: true),
 					idPuntoDescarga = table.Column<int>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false),
 					ErrorExportacion = table.Column<string>(maxLength: 1000, nullable: true),
 					idAlbaran = table.Column<int>(nullable: true),
 					TipoOrigen = table.Column<int>(nullable: true),
@@ -7092,6 +7382,12 @@ namespace VMES.Database.Vmes.Migrations
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_SalidasLinias", x => x.id);
+					table.ForeignKey(
+						name: "FK_SalidasLinias_Medicaciones_MedicacionId",
+						column: x => x.MedicacionId,
+						principalTable: "Medicaciones",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_SalidasLinias_Ubicaciones1",
 						column: x => x.Origen1,
@@ -7192,18 +7488,18 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					idSalidaLinia = table.Column<int>(nullable: true),
-					idMedicamento = table.Column<int>(nullable: true),
-					Cantidad = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
-					Bultos = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
-					IdUnidad = table.Column<int>(nullable: true),
+					idSalidaLinia = table.Column<int>(nullable: false),
+					Cantidad = table.Column<decimal>(type: "decimal(18, 3)", nullable: false),
+					Bultos = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
+					IdUnidad = table.Column<int>(nullable: false),
 					idFormato = table.Column<int>(nullable: true),
 					idEnvase = table.Column<int>(nullable: true),
-					PrecioUnidad = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
+					PrecioUnidad = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
 					Estado = table.Column<int>(nullable: true),
-					Precio = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
-					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					idOrigen = table.Column<int>(nullable: true)
+					Precio = table.Column<decimal>(type: "decimal(18, 2)", nullable: true),
+					Fecha = table.Column<DateTime>(nullable: true),
+					idOrigen = table.Column<int>(nullable: true),
+					ProductoId = table.Column<int>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -7213,7 +7509,13 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.IdUnidad,
 						principalTable: "Unidades",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_SalidasLiniasMedicaciones_Productos_ProductoId",
+						column: x => x.ProductoId,
+						principalTable: "Productos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
 						name: "FK_SalidasLiniasMedicaciones_Envases",
 						column: x => x.idEnvase,
@@ -7224,12 +7526,6 @@ namespace VMES.Database.Vmes.Migrations
 						name: "FK_SalidasLiniasMedicaciones_Formatos",
 						column: x => x.idFormato,
 						principalTable: "Formatos",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_SalidasLiniasMedicaciones_Medicaciones",
-						column: x => x.idMedicamento,
-						principalTable: "Medicaciones",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
@@ -7312,107 +7608,71 @@ namespace VMES.Database.Vmes.Migrations
 						onDelete: ReferentialAction.Restrict);
 				});
 
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [EnvasesDeStock] 
-				(
-					-- Add the parameters for the function here
-					@idEnvase int,
-					@Cantidad real
-				)
-				RETURNS decimal(18,5)
-				AS
-				BEGIN
-					DECLARE @ResultVar decimal(18,5);
-					declare @EnvaseCapacidad real;
-
-					SELECT @EnvaseCapacidad =  isnull(Capacidad,0)  FROM Envases WHERE Id=@idEnvase and ModoUdsFormato=1;
-
-					if @EnvaseCapacidad = null or @EnvaseCapacidad=0 or @Cantidad =0
-					begin
-						RETURN 0
-					end
-						return @Cantidad/@EnvaseCapacidad
-		
-
-				END
-
-
-				GO
-			");
-
 			migrationBuilder.CreateTable(
 				name: "Stocks",
 				columns: table => new
 				{
 					Id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					Ubicacion = table.Column<int>(nullable: true),
-					Producto = table.Column<int>(nullable: true),
+					Ubicacion = table.Column<int>(nullable: false),
 					Formato = table.Column<int>(nullable: true),
-					Lote = table.Column<int>(nullable: true),
+					Lote = table.Column<int>(nullable: false),
 					Envase = table.Column<int>(nullable: true),
 					Cantidad = table.Column<float>(nullable: true),
 					Unidad = table.Column<int>(nullable: true),
-					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
+					Fecha = table.Column<DateTime>(nullable: false),
 					Estado = table.Column<int>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
+					Exportado = table.Column<bool>(nullable: false),
 					Palet = table.Column<int>(nullable: true),
 					Procesando = table.Column<bool>(nullable: true),
 					Observaciones = table.Column<string>(maxLength: 4000, nullable: true),
 					idOld = table.Column<int>(nullable: true),
 					idEntradasLineas = table.Column<int>(nullable: true),
 					idSalidasLineas = table.Column<int>(nullable: true),
-					UdsEnvase = table.Column<decimal>(type: "decimal(18, 5)", nullable: true, computedColumnSql: "([dbo].[EnvasesDeStock]([envase],[Cantidad]))"),
-					FechaERP = table.Column<DateTime>(type: "datetime", nullable: true)
+					FechaERP = table.Column<DateTime>(nullable: true)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Stocks", x => x.Id);
 					table.ForeignKey(
-						name: "FK_Stocks_Envases",
+						name: "FK_Stocks_Envases_Envase",
 						column: x => x.Envase,
 						principalTable: "Envases",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_Stocks_Formatos",
+						name: "FK_Stocks_Formatos_Formato",
 						column: x => x.Formato,
 						principalTable: "Formatos",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_Stocks_Lotes",
+						name: "FK_Stocks_Lotes_Lote",
 						column: x => x.Lote,
 						principalTable: "Lotes",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
-						name: "FK_Stocks_Productos",
-						column: x => x.Producto,
-						principalTable: "Productos",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_Stocks_Ubicaciones",
+						name: "FK_Stocks_Ubicaciones_Ubicacion",
 						column: x => x.Ubicacion,
 						principalTable: "Ubicaciones",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.SetNull);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
-						name: "FK_Stocks_Unidades",
+						name: "FK_Stocks_Unidades_Unidad",
 						column: x => x.Unidad,
 						principalTable: "Unidades",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_Stocks_EntradasLineas",
+						name: "FK_Stocks_EntradasLineas_idEntradasLineas",
 						column: x => x.idEntradasLineas,
 						principalTable: "EntradasLineas",
 						principalColumn: "id",
-						onDelete: ReferentialAction.SetNull);
+						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_Stocks_SalidasLinias",
+						name: "FK_Stocks_SalidasLinias_idSalidasLineas",
 						column: x => x.idSalidasLineas,
 						principalTable: "SalidasLinias",
 						principalColumn: "id",
@@ -7456,66 +7716,6 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "VentasLiniasMedicaciones",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					idVentaLinia = table.Column<int>(nullable: true),
-					idEnvase = table.Column<int>(nullable: true),
-					idFormato = table.Column<int>(nullable: true),
-					idMedicamento = table.Column<int>(nullable: true),
-					idUnidad = table.Column<int>(nullable: true),
-					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
-					Cantidad = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
-					Bultos = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
-					Estado = table.Column<int>(nullable: true),
-					Precio = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
-					PrecioUnidad = table.Column<decimal>(type: "numeric(18, 6)", nullable: true),
-					idLineaSalidaMedicamento = table.Column<int>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_VentasLiniasMedicaciones", x => x.id);
-					table.ForeignKey(
-						name: "FK_VentasLiniasMedicaciones_Envases",
-						column: x => x.idEnvase,
-						principalTable: "Envases",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_VentasLiniasMedicaciones_Formatos",
-						column: x => x.idFormato,
-						principalTable: "Formatos",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_VentasLiniasMedicaciones_SalidasLiniasMedicaciones",
-						column: x => x.idLineaSalidaMedicamento,
-						principalTable: "SalidasLiniasMedicaciones",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_VentasLiniasMedicaciones_Medicaciones",
-						column: x => x.idMedicamento,
-						principalTable: "Medicaciones",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_VentasLiniasMedicaciones_Unidades",
-						column: x => x.idUnidad,
-						principalTable: "Unidades",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_VentasLiniasMedicaciones_VentasLinias",
-						column: x => x.idVentaLinia,
-						principalTable: "VentasLinias",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
 				name: "TagsBasculas",
 				columns: table => new
 				{
@@ -7550,7 +7750,7 @@ namespace VMES.Database.Vmes.Migrations
 					Formula = table.Column<int>(nullable: true),
 					NumeroCiclos = table.Column<int>(nullable: true),
 					ContadorCiclos = table.Column<int>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
 					LoteNombre = table.Column<string>(maxLength: 30, nullable: true),
 					FormulaFecha = table.Column<DateTime>(type: "datetime", nullable: true),
 					ProductoDestino = table.Column<int>(nullable: true),
@@ -7575,7 +7775,7 @@ namespace VMES.Database.Vmes.Migrations
 					LineaEntrada = table.Column<int>(nullable: true),
 					SeriePlanificacion = table.Column<int>(nullable: true),
 					Planificacion = table.Column<int>(nullable: true),
-					Importado = table.Column<bool>(nullable: true),
+					Importado = table.Column<bool>(nullable: false),
 					LineaVenta = table.Column<int>(nullable: true),
 					OrdenAscendiente = table.Column<int>(nullable: true),
 					SerieOrdenAscendiente = table.Column<int>(nullable: true),
@@ -7596,6 +7796,16 @@ namespace VMES.Database.Vmes.Migrations
 					SerieViajeSalida = table.Column<int>(nullable: true),
 					NombreChofer = table.Column<string>(maxLength: 50, nullable: true),
 					Matricula = table.Column<string>(maxLength: 15, nullable: true),
+					ModuloVariables0 = table.Column<float>(nullable: false),
+					ModuloVariables1 = table.Column<float>(nullable: false),
+					ModuloVariables2 = table.Column<float>(nullable: false),
+					ModuloVariables3 = table.Column<float>(nullable: false),
+					ModuloVariables4 = table.Column<float>(nullable: false),
+					ModuloVariables5 = table.Column<float>(nullable: false),
+					ModuloVariables6 = table.Column<float>(nullable: false),
+					ModuloVariables7 = table.Column<float>(nullable: false),
+					ModuloVariables8 = table.Column<float>(nullable: false),
+					ModuloVariables9 = table.Column<float>(nullable: false),
 					Remolque = table.Column<string>(maxLength: 15, nullable: true),
 					IdVehiculo = table.Column<int>(nullable: true),
 					RefERP = table.Column<string>(maxLength: 50, nullable: true),
@@ -7619,7 +7829,8 @@ namespace VMES.Database.Vmes.Migrations
 					TipoAutoRespuestaDestino = table.Column<int>(nullable: false),
 					EfectiveJouls = table.Column<decimal>(type: "decimal(18, 2)", nullable: false),
 					TotalJouls = table.Column<decimal>(type: "decimal(18, 2)", nullable: false),
-					Validada = table.Column<bool>(nullable: true, defaultValueSql: "((0))")
+					Validada = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
+					VentaLineaId = table.Column<int>(nullable: true)
 				},
 				constraints: table =>
 				{
@@ -7665,6 +7876,12 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.ProductoDestino,
 						principalTable: "Productos",
 						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_Ordenes_VentasLinias_VentaLineaId",
+						column: x => x.VentaLineaId,
+						principalTable: "VentasLinias",
+						principalColumn: "id",
 						onDelete: ReferentialAction.Restrict);
 				});
 
@@ -7780,8 +7997,7 @@ namespace VMES.Database.Vmes.Migrations
 					Variable2 = table.Column<decimal>(type: "decimal(12, 5)", nullable: true),
 					Tipo = table.Column<int>(nullable: true),
 					Editado = table.Column<bool>(nullable: true),
-					Envase = table.Column<int>(nullable: true),
-					UdsEnvase = table.Column<decimal>(type: "decimal(18, 5)", nullable: true, computedColumnSql: "([dbo].[EnvasesDeStock]([Envase],[Cantidad]))")
+					Envase = table.Column<int>(nullable: true)
 				},
 				constraints: table =>
 				{
@@ -7924,148 +8140,6 @@ namespace VMES.Database.Vmes.Migrations
 						onDelete: ReferentialAction.Restrict);
 				});
 
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenKWConsumidosTotal]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,4)
-					SELECT @ret= sum(KWhTotal)  from Resultados where Orden = @idorden
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenKWProducidosTotal]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,4)
-					SELECT @ret= sum(KWhTotal)  from Desgloses where Orden = @idorden
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenKWConsumidosEfectivo]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,4)
-					SELECT @ret= sum(KwhEfectivo)  from Resultados where Orden = @idorden
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenKWProducidosEfectivo]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,4)
-					SELECT @ret= sum(KWhEfectivo)  from Desgloses where Orden = @idorden
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenCantidadProducida]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,4)
-					SELECT @ret= sum(Cantidad)   from Desgloses where Orden = @idorden
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenKWEfectivoCantidad]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,6)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,6)
-					declare @cantidad decimal(18,6)
-
-					set @ret= isnull( ([dbo].[OrdenKWProducidosEfectivo](@idorden)) + ([dbo].[OrdenKWConsumidosEfectivo](@idorden)),0)
-					set @cantidad = ISNULL( dbo.OrdenCantidadProducida(@idorden),0)
-
-					if @cantidad =0 or @ret=0  return 0;
-	
-					set @ret= @ret/(@cantidad/1000)
-
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [OrdenKWTotalCantidad]
-				(
-					-- Add the parameters for the function here
-					@idorden as int
-				)
-				RETURNS decimal(18,6)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret decimal(18,6)
-					declare @cantidad decimal(18,6)
-
-					set @ret= isnull( ([dbo].[OrdenKWProducidosTotal](@idorden)) + ([dbo].[OrdenKWConsumidosTotal](@idorden)),0)
-					set @cantidad = ISNULL( dbo.OrdenCantidadProducida(@idorden),0)
-
-					if @cantidad =0 or @ret=0  return 0;
-	
-					set @ret= @ret/(@cantidad/1000)
-
-					RETURN isnull(@ret,0)
-				END
-
-				GO
-			");
-
 			migrationBuilder.CreateTable(
 				name: "OrdenesDatosExtra",
 				columns: table => new
@@ -8114,6 +8188,31 @@ namespace VMES.Database.Vmes.Migrations
 					table.ForeignKey(
 						name: "FK_OrdenesRelacion_Ordenes",
 						column: x => x.idOrdenPadre,
+						principalTable: "Ordenes",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "OrdenesTransicionEstadosHistory",
+				columns: table => new
+				{
+					IdAuto = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					InicioValidez = table.Column<DateTime>(nullable: false, defaultValueSql: "(getdate())"),
+					FinValidez = table.Column<DateTime>(nullable: true),
+					ContadorActualizaciones = table.Column<int>(nullable: false),
+					EstadoAnterior = table.Column<int>(nullable: true),
+					Estado = table.Column<int>(nullable: true),
+					ExportadoERP = table.Column<int>(nullable: true),
+					IdOrden = table.Column<int>(nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_OrdenesTransicionEstadosHistory", x => x.IdAuto);
+					table.ForeignKey(
+						name: "FK_OrdenesTransicionEstadosHistory_Ordenes_IdOrden",
+						column: x => x.IdOrden,
 						principalTable: "Ordenes",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
@@ -8231,6 +8330,58 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
+				name: "SolicitudesAjusteCaudal",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					ProductoId = table.Column<int>(nullable: false),
+					UbicacionId = table.Column<int>(nullable: false),
+					Type = table.Column<byte>(nullable: false),
+					Status = table.Column<byte>(nullable: false),
+					NuevoCaudalEntrada = table.Column<decimal>(type: "decimal(18, 3)", nullable: false),
+					NuevoCaudalSalida = table.Column<decimal>(type: "decimal(18, 3)", nullable: false),
+					Creacion = table.Column<DateTime>(nullable: false),
+					Modificacion = table.Column<DateTime>(nullable: false),
+					OrdenId = table.Column<int>(nullable: true),
+					UsuarioId = table.Column<int>(nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_SolicitudesAjusteCaudal", x => x.Id);
+					table.ForeignKey(
+						name: "FK_SolicitudesAjusteCaudal_Ordenes_OrdenId",
+						column: x => x.OrdenId,
+						principalTable: "Ordenes",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_SolicitudesAjusteCaudal_Productos_ProductoId",
+						column: x => x.ProductoId,
+						principalTable: "Productos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_SolicitudesAjusteCaudal_Ubicaciones_UbicacionId",
+						column: x => x.UbicacionId,
+						principalTable: "Ubicaciones",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
+					table.ForeignKey(
+						name: "FK_SolicitudesAjusteCaudal_Usuarios_UsuarioId",
+						column: x => x.UsuarioId,
+						principalTable: "Usuarios",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_SolicitudesAjusteCaudal_Caudales_ProductoId_UbicacionId",
+						columns: x => new { x.ProductoId, x.UbicacionId },
+						principalTable: "Caudales",
+						principalColumns: new[] { "ProductoId", "UbicacionId" },
+						onDelete: ReferentialAction.Cascade);
+				});
+
+			migrationBuilder.CreateTable(
 				name: "StocksReserva",
 				columns: table => new
 				{
@@ -8319,7 +8470,8 @@ namespace VMES.Database.Vmes.Migrations
 					IdLinEntrada = table.Column<int>(nullable: true),
 					IdLinSalida = table.Column<int>(nullable: true),
 					PermisoArcosDesinfeccion = table.Column<bool>(nullable: true),
-					Ordenacion = table.Column<int>(nullable: true)
+					Ordenacion = table.Column<int>(nullable: true),
+					Referencia = table.Column<string>(maxLength: 128, nullable: true)
 				},
 				constraints: table =>
 				{
@@ -8331,16 +8483,16 @@ namespace VMES.Database.Vmes.Migrations
 						principalColumn: "id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_Tarjetas_SalidasLinias",
-						column: x => x.IdLinSalida,
-						principalTable: "SalidasLinias",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
 						name: "FK_Tarjetas_ordenes",
 						column: x => x.IdOrdenActual,
 						principalTable: "Ordenes",
 						principalColumn: "Id",
+						onDelete: ReferentialAction.Restrict);
+					table.ForeignKey(
+						name: "FK_Tarjetas_SalidasLinias",
+						column: x => x.IdLinSalida,
+						principalTable: "SalidasLinias",
+						principalColumn: "id",
 						onDelete: ReferentialAction.Restrict);
 				});
 
@@ -8517,7 +8669,8 @@ namespace VMES.Database.Vmes.Migrations
 					PostDesinfeccion = table.Column<bool>(nullable: true),
 					PreDesinfeccionOK = table.Column<bool>(nullable: true),
 					PostDesinfeccionOK = table.Column<bool>(nullable: true),
-					exportado = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
+					exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false),
 					DUA = table.Column<string>(maxLength: 50, nullable: true),
 					Factura = table.Column<string>(maxLength: 20, nullable: true),
 					Albaran = table.Column<string>(maxLength: 20, nullable: true),
@@ -8592,7 +8745,8 @@ namespace VMES.Database.Vmes.Migrations
 					Estado = table.Column<int>(nullable: true),
 					PreDesinfeccion = table.Column<bool>(nullable: true),
 					PostDesinfeccion = table.Column<bool>(nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false),
 					ErrorExportacion = table.Column<string>(maxLength: 1000, nullable: true)
 				},
 				constraints: table =>
@@ -8636,7 +8790,7 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					id = table.Column<int>(nullable: false)
 						.Annotation("SqlServer:Identity", "1, 1"),
-					Observaciones = table.Column<string>(type: "ntext", nullable: true),
+					Observaciones = table.Column<string>(nullable: true),
 					idSerie = table.Column<int>(nullable: false),
 					Codigo = table.Column<int>(nullable: false),
 					Referencia = table.Column<string>(maxLength: 50, nullable: true),
@@ -8644,14 +8798,15 @@ namespace VMES.Database.Vmes.Migrations
 					Fecha = table.Column<DateTime>(type: "datetime", nullable: true),
 					idCliente = table.Column<int>(nullable: true),
 					Estado = table.Column<int>(nullable: true),
-					Comentario = table.Column<string>(type: "ntext", nullable: true),
+					Comentario = table.Column<string>(nullable: true),
 					FechaPrevista = table.Column<DateTime>(type: "datetime", nullable: true),
 					FInicio = table.Column<DateTime>(type: "datetime", nullable: true),
 					FFin = table.Column<DateTime>(type: "datetime", nullable: true),
 					idViaje = table.Column<int>(nullable: true),
 					Precio = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
 					ReferenciaVenta = table.Column<string>(maxLength: 20, nullable: true),
-					Exportado = table.Column<bool>(nullable: true),
+					Exportado = table.Column<bool>(nullable: false),
+					Importado = table.Column<bool>(nullable: false),
 					ErrorExportacion = table.Column<string>(maxLength: 1000, nullable: true)
 				},
 				constraints: table =>
@@ -8708,7 +8863,8 @@ namespace VMES.Database.Vmes.Migrations
 					Medicamento = table.Column<bool>(nullable: true),
 					FechaFin = table.Column<DateTime>(type: "datetime", nullable: true),
 					idRefERP = table.Column<string>(maxLength: 20, nullable: true),
-					idOld = table.Column<int>(nullable: true)
+					idOld = table.Column<int>(nullable: true),
+					IsDeleted = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -8755,7 +8911,7 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.Formula,
 						principalTable: "Formulas",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
 						name: "FK_Formularios_Medicaciones",
 						column: x => x.Medicacion,
@@ -8768,77 +8924,6 @@ namespace VMES.Database.Vmes.Migrations
 						principalTable: "Productos",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [FormulaKWToneladaEfectivo]
-				(
-					-- Add the parameters for the function here
-					@idf as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					DECLARE @ret decimal(18,4)
-
-					select @ret= sum(KWEfectivoTonelada) from (
-					select  m.TipoModulo ,  avg(OE.KWEfectivoTonelada) as KWEfectivoTonelada   
-				from (select top 50 * from Ordenes where Formula =@idf and Estado =5 order by Id desc ) as O 
-				inner join ordenesdatosextra as OE on OE.id=O.id
-				inner join Modulos as m on m.Id = O.Modulo 
-					where OE.KWEfectivoTonelada >0
-					group by m.TipoModulo ) as tmp
-
-					RETURN isnull( @ret,0)
-
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [FormulaKWToneladaTotal]
-				(
-					-- Add the parameters for the function here
-					@idf as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					DECLARE @ret decimal(18,4)
-
-					select @ret= sum(KWTotalTonelada) from (
-					select  m.TipoModulo ,  avg(OE.KWTotalTonelada) as KWTotalTonelada   
-				from (select top 50 * from Ordenes where Formula =@idf and Estado =5 order by Id desc ) as O 
-				inner join ordenesdatosextra as OE on OE.id=O.id
-				inner join Modulos as m on m.Id = O.Modulo 
-					where OE.KWTotalTonelada >0
-					group by m.TipoModulo ) as tmp
-
-					RETURN isnull( @ret,0)
-
-				END
-
-				GO
-			");
-
-			migrationBuilder.CreateTable(
-				name: "FormulasDatosExtra",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false),
-					KWToneladaEfectivo = table.Column<decimal>(type: "decimal(18, 4)", nullable: true, computedColumnSql: "([dbo].[FormulaKWToneladaEfectivo]([id]))"),
-					KWToneladaTotal = table.Column<decimal>(type: "decimal(18, 4)", nullable: true, computedColumnSql: "([dbo].[FormulaKWToneladaTotal]([id]))")
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_FormulasDatosExtra", x => x.id);
-					table.ForeignKey(
-						name: "FK_FormulasDatosExtra_Formulas",
-						column: x => x.id,
-						principalTable: "Formulas",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -8903,88 +8988,17 @@ namespace VMES.Database.Vmes.Migrations
 				{
 					table.PrimaryKey("PK_Versiones", x => x.Id);
 					table.ForeignKey(
-						name: "FK_Versiones_Formulas",
+						name: "FK_Versiones_Formulas_Formula",
 						column: x => x.Formula,
 						principalTable: "Formulas",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
 						name: "FK_Versiones_Unidades",
 						column: x => x.Unidad,
 						principalTable: "Unidades",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [VersionKWToneladaEfectivo]
-				(
-					-- Add the parameters for the function here
-					@idf as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					DECLARE @ret decimal(18,4)
-
-					select @ret= sum(KWEfectivoTonelada) from (
-					select  m.TipoModulo ,  avg(OE.KWEfectivoTonelada) as KWEfectivoTonelada   
-				from (select top 50 * from Ordenes where [Version] =@idf and Estado =5 order by Id desc ) as O 
-				inner join ordenesdatosextra as OE on OE.id=O.id
-				inner join Modulos as m on m.Id = O.Modulo 
-					where OE.KWEfectivoTonelada >0
-					group by m.TipoModulo ) as tmp
-
-					RETURN isnull( @ret,0)
-
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [VersionKWToneladaTotal]
-				(
-					-- Add the parameters for the function here
-					@idf as int
-				)
-				RETURNS decimal(18,4)
-				AS
-				BEGIN
-					DECLARE @ret decimal(18,4)
-
-					select @ret= sum(KWTotalTonelada) from (
-					select  m.TipoModulo ,  avg(OE.KWTotalTonelada) as KWTotalTonelada   
-				from (select top 50 * from Ordenes where [Version] =@idf and Estado =5 order by Id desc ) as O 
-				inner join ordenesdatosextra as OE on OE.id=O.id
-				inner join Modulos as m on m.Id = O.Modulo 
-					where OE.KWTotalTonelada >0
-					group by m.TipoModulo ) as tmp
-
-					RETURN isnull( @ret,0)
-
-				END
-
-				GO
-			");
-
-			migrationBuilder.CreateTable(
-				name: "VersionDatosExtra",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false),
-					KWToneladaEfectivo = table.Column<decimal>(type: "decimal(18, 4)", nullable: true, computedColumnSql: "([dbo].[VersionKWToneladaEfectivo]([id]))"),
-					KWToneladaTotal = table.Column<decimal>(type: "decimal(18, 4)", nullable: true, computedColumnSql: "([dbo].[VersionKWToneladaTotal]([id]))")
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_VersionDatosExtra", x => x.id);
-					table.ForeignKey(
-						name: "FK_VersionDatosExtra_Version",
-						column: x => x.id,
-						principalTable: "Versiones",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -9002,6 +9016,7 @@ namespace VMES.Database.Vmes.Migrations
 					Maquinaria = table.Column<bool>(nullable: true),
 					Simultaneos = table.Column<int>(nullable: true),
 					Controlado = table.Column<bool>(nullable: true),
+					GenerarComprovacionOrigenVacio = table.Column<bool>(nullable: false),
 					Manual = table.Column<bool>(nullable: true),
 					OptimizarPesada = table.Column<bool>(nullable: true),
 					ControlEntradas = table.Column<bool>(nullable: true),
@@ -9035,7 +9050,7 @@ namespace VMES.Database.Vmes.Migrations
 					GananciaUnidad = table.Column<int>(nullable: true),
 					Ganancia = table.Column<float>(nullable: true),
 					EnvaseOrigen = table.Column<int>(nullable: true),
-					Estado = table.Column<int>(nullable: true),
+					Estado = table.Column<int>(nullable: false),
 					TransporteInicial = table.Column<bool>(nullable: true),
 					Confirmar = table.Column<bool>(nullable: true),
 					MostrarFormula = table.Column<bool>(nullable: true),
@@ -9107,7 +9122,7 @@ namespace VMES.Database.Vmes.Migrations
 					PLCOrdenNumActual = table.Column<int>(nullable: true),
 					PLCTCiclosNumActual = table.Column<int>(nullable: true),
 					PLCCaminoActual = table.Column<int>(nullable: true),
-					PLCEstadoActual = table.Column<int>(nullable: true),
+					PLCEstadoActual = table.Column<int>(nullable: false),
 					PLCVariablesActual0 = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
 					PLCVariablesActual1 = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
 					PLCVariablesActual2 = table.Column<decimal>(type: "decimal(18, 3)", nullable: true),
@@ -9129,15 +9144,15 @@ namespace VMES.Database.Vmes.Migrations
 					LimpiezaProdFinalDiferente = table.Column<bool>(nullable: true),
 					DuracionOrden = table.Column<decimal>(type: "numeric(18, 2)", nullable: true),
 					idPlantillaLimpieza = table.Column<int>(nullable: true),
-					ConOrigenes = table.Column<bool>(nullable: true),
-					ConDestinos = table.Column<bool>(nullable: true),
+					ConOrigenes = table.Column<bool>(nullable: false),
+					ConDestinos = table.Column<bool>(nullable: false),
 					AjusteStockFinalOrden = table.Column<bool>(nullable: true),
 					MinimoSiloResetUbi = table.Column<bool>(nullable: true),
 					VaciarSilosMinimosFinOrden = table.Column<bool>(nullable: true),
 					CaminosActivar = table.Column<bool>(nullable: true),
 					CaminosMin = table.Column<int>(nullable: true),
 					CaminosMax = table.Column<int>(nullable: true),
-					CaminosDescripcion = table.Column<string>(type: "ntext", nullable: true),
+					CaminosDescripcion = table.Column<string>(nullable: true),
 					ResituarEnServidor = table.Column<bool>(nullable: true),
 					ProducidosDeConsumidos = table.Column<bool>(nullable: true),
 					FinalizarNopAlarmas = table.Column<bool>(nullable: true),
@@ -9174,7 +9189,17 @@ namespace VMES.Database.Vmes.Migrations
 					GenerarAutoInicio = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					RecibirAutoInicio = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					CrearOrden = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
-					RequiereValidacion = table.Column<bool>(nullable: true, defaultValueSql: "((0))")
+					RequiereValidacion = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
+					VolteoHabilitarModoTiempo = table.Column<bool>(nullable: false),
+					VolteoHabilitarVaciarOrigen = table.Column<bool>(nullable: false),
+					VolteoHabilitarLlenarDestino = table.Column<bool>(nullable: false),
+					AsignarProductoDestino = table.Column<bool>(nullable: false),
+					IgnorarConsumidos = table.Column<bool>(nullable: false),
+					IgnorarProducidos = table.Column<bool>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false),
+					NumValidaciones = table.Column<int>(nullable: false, defaultValueSql: "20"),
+					PermitirPausar = table.Column<bool>(nullable: false),
+					PermitirReanudar = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -9184,12 +9209,6 @@ namespace VMES.Database.Vmes.Migrations
 						column: x => x.Departamento,
 						principalTable: "Departamentos",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_Modulos_OEEEstadosTipo",
-						column: x => x.EstadoForzado,
-						principalTable: "OEEEstadosTipo",
-						principalColumn: "id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_Modulos_ModulosAsociadoOrden1",
@@ -9443,11 +9462,11 @@ namespace VMES.Database.Vmes.Migrations
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_LogMovimientosStocks_Stocks",
+						name: "FK_LogMovimientosStocks_Stocks_IdStock",
 						column: x => x.IdStock,
 						principalTable: "Stocks",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Cascade);
+						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
 						name: "FK_LogMovimientosStocks_Ubicaciones",
 						column: x => x.IdUbicacion,
@@ -9508,6 +9527,30 @@ namespace VMES.Database.Vmes.Migrations
 						principalTable: "Medidores",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "ModulosEstadoComunicaciones",
+				columns: table => new
+				{
+					ModuloId = table.Column<int>(nullable: false),
+					Estado = table.Column<int>(nullable: false),
+					CerrarModulo = table.Column<bool>(nullable: false),
+					CerrarOpc = table.Column<bool>(nullable: false),
+					Resituar = table.Column<bool>(nullable: false),
+					UltimaActualizacionIntegraServer = table.Column<DateTime>(nullable: false),
+					UltimaActualizacionIntegraModulo = table.Column<DateTime>(nullable: false),
+					ProcessId = table.Column<int>(nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_ModulosEstadoComunicaciones", x => x.ModuloId);
+					table.ForeignKey(
+						name: "FK_ModulosEstadoComunicaciones_Modulos_ModuloId",
+						column: x => x.ModuloId,
+						principalTable: "Modulos",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -9632,65 +9675,6 @@ namespace VMES.Database.Vmes.Migrations
 						principalTable: "Ubicaciones",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "OEEEstadosModulos",
-				columns: table => new
-				{
-					idEstadoTipo = table.Column<int>(nullable: false),
-					idModulo = table.Column<int>(nullable: false)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OEEEstadosModulos", x => new { x.idEstadoTipo, x.idModulo });
-					table.ForeignKey(
-						name: "FK_OEEEstadosModulos_OEEEstadosTipo",
-						column: x => x.idEstadoTipo,
-						principalTable: "OEEEstadosTipo",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstadosModulos_Modulos",
-						column: x => x.idModulo,
-						principalTable: "Modulos",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
-				name: "OEEHorarios",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					idModulo = table.Column<int>(nullable: true),
-					idMedidor = table.Column<int>(nullable: true),
-					HoraInicio = table.Column<TimeSpan>(nullable: false),
-					HoraFin = table.Column<TimeSpan>(nullable: false),
-					Lunes = table.Column<bool>(nullable: false),
-					Martes = table.Column<bool>(nullable: false),
-					Miercoles = table.Column<bool>(nullable: false),
-					Jueves = table.Column<bool>(nullable: false),
-					Viernes = table.Column<bool>(nullable: false),
-					Sabado = table.Column<bool>(nullable: false),
-					Domingo = table.Column<bool>(nullable: false)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OEEHorarios", x => x.id);
-					table.ForeignKey(
-						name: "FK_OEEHorarios_Medidores",
-						column: x => x.idMedidor,
-						principalTable: "Medidores",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEHorarios_Modulos",
-						column: x => x.idModulo,
-						principalTable: "Modulos",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.SetNull);
 				});
 
 			migrationBuilder.CreateTable(
@@ -10029,11 +10013,11 @@ namespace VMES.Database.Vmes.Migrations
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 					table.ForeignKey(
-						name: "FK_Componentes_Versiones",
+						name: "FK_Componentes_Versiones_Version",
 						column: x => x.Version,
 						principalTable: "Versiones",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
 						name: "FK_Componentes_OperCabPlantillas",
 						column: x => x.idPlantilla,
@@ -10097,6 +10081,7 @@ namespace VMES.Database.Vmes.Migrations
 					PosicionDosificacionPLC = table.Column<int>(nullable: true),
 					PosicionOperacionPLC = table.Column<int>(nullable: true),
 					PosicionMultidosiPLC = table.Column<int>(nullable: true),
+					PosicionTemperaturaPLC = table.Column<int>(nullable: true),
 					idPlantilla = table.Column<int>(nullable: true),
 					idFormulaOriginal = table.Column<int>(nullable: true),
 					idComponenteOriginal = table.Column<int>(nullable: true),
@@ -10461,7 +10446,8 @@ namespace VMES.Database.Vmes.Migrations
 					RevisadoAlertas = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					AlertaGestionada = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					Hash = table.Column<string>(maxLength: 32, nullable: true),
-					OpcConfigId = table.Column<int>(nullable: true)
+					OpcConfigId = table.Column<int>(nullable: true),
+					PostEnvioProcesada = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
@@ -10609,70 +10595,6 @@ namespace VMES.Database.Vmes.Migrations
 				});
 
 			migrationBuilder.CreateTable(
-				name: "OEEEstados",
-				columns: table => new
-				{
-					id = table.Column<int>(nullable: false)
-						.Annotation("SqlServer:Identity", "1, 1"),
-					IdModulo = table.Column<int>(nullable: true),
-					IdMedidor = table.Column<int>(nullable: true),
-					Estado = table.Column<int>(nullable: true),
-					FInicio = table.Column<DateTime>(type: "datetime", nullable: true),
-					FFinal = table.Column<DateTime>(type: "datetime", nullable: true),
-					VentanaSegs = table.Column<int>(nullable: true),
-					OperarioId = table.Column<int>(nullable: true),
-					IdTurno = table.Column<int>(nullable: true),
-					IdAlarmaActual = table.Column<int>(nullable: true),
-					IdOrdenActual = table.Column<int>(nullable: true)
-				},
-				constraints: table =>
-				{
-					table.PrimaryKey("PK_OEEEstados", x => x.id);
-					table.ForeignKey(
-						name: "FK_OEEEstados_OEEEstadosTipo",
-						column: x => x.Estado,
-						principalTable: "OEEEstadosTipo",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstados_NetAlarmas",
-						column: x => x.IdAlarmaActual,
-						principalTable: "NetAlarmas",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstados_Medidores",
-						column: x => x.IdMedidor,
-						principalTable: "Medidores",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstados_Modulos",
-						column: x => x.IdModulo,
-						principalTable: "Modulos",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstados_Ordenes",
-						column: x => x.IdOrdenActual,
-						principalTable: "Ordenes",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstados_Turnos",
-						column: x => x.IdTurno,
-						principalTable: "Turnos",
-						principalColumn: "id",
-						onDelete: ReferentialAction.Restrict);
-					table.ForeignKey(
-						name: "FK_OEEEstados_Usuarios",
-						column: x => x.OperarioId,
-						principalTable: "Usuarios",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
-				});
-
-			migrationBuilder.CreateTable(
 				name: "Tags",
 				columns: table => new
 				{
@@ -10728,7 +10650,7 @@ namespace VMES.Database.Vmes.Migrations
 					MESHMIBotonIntro = table.Column<bool>(nullable: true),
 					MESHMIBotonOpcion1 = table.Column<bool>(nullable: true),
 					MESHMIBotonOpcion2 = table.Column<bool>(nullable: true),
-					IdPLC = table.Column<int>(nullable: true),
+					IdPLC = table.Column<int>(nullable: false),
 					FFinIntermitente = table.Column<DateTime>(type: "datetime", nullable: true),
 					idModulo = table.Column<int>(nullable: true),
 					OptHMIActivo = table.Column<bool>(nullable: true),
@@ -10746,17 +10668,18 @@ namespace VMES.Database.Vmes.Migrations
 					AutoSeleccion = table.Column<bool>(nullable: true),
 					OpcEntradaAlmacen = table.Column<bool>(nullable: true, defaultValueSql: "((0))"),
 					IdOpc = table.Column<int>(nullable: true),
-					OpcConfigId = table.Column<int>(nullable: true)
+					OpcConfigId = table.Column<int>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Tags", x => x.Id);
 					table.ForeignKey(
-						name: "FK__Tags__OpcConfigI__04BA9F53",
+						name: "FK_Tags_OpcConfig_OpcConfigId",
 						column: x => x.OpcConfigId,
 						principalTable: "OpcConfig",
 						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						onDelete: ReferentialAction.Cascade);
 					table.ForeignKey(
 						name: "FK_Tags_Ubicaciones",
 						column: x => x.Ubicacion,
@@ -10805,7 +10728,7 @@ namespace VMES.Database.Vmes.Migrations
 					ValidarServidaOpc = table.Column<string>(maxLength: 50, nullable: true),
 					ServidaOpc = table.Column<string>(maxLength: 50, nullable: true),
 					IP = table.Column<string>(maxLength: 20, nullable: true),
-					Tipo = table.Column<int>(nullable: true),
+					Tipo = table.Column<int>(nullable: false),
 					ToleranciaSuperior = table.Column<decimal>(type: "numeric(8, 2)", nullable: true, defaultValueSql: "((0))"),
 					ToleranciaInferior = table.Column<decimal>(type: "numeric(8, 2)", nullable: true, defaultValueSql: "((0))"),
 					PLCBCapacidadMaxima = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
@@ -10872,7 +10795,7 @@ namespace VMES.Database.Vmes.Migrations
 					PLCITextoAdicional = table.Column<string>(maxLength: 50, nullable: true),
 					PLCITextoAdicional2 = table.Column<string>(maxLength: 50, nullable: true),
 					EnviarDatosAPLC = table.Column<bool>(nullable: true),
-					PosicionPLC = table.Column<int>(nullable: true),
+					PosicionPLC = table.Column<int>(nullable: false),
 					PLCBPesoMaxAcumulado = table.Column<decimal>(type: "numeric(18, 3)", nullable: true),
 					PLCBTiempoRetardoCiclo1 = table.Column<int>(nullable: true),
 					PLCBTiempoRestablecerPerturbacion = table.Column<int>(nullable: true),
@@ -10934,23 +10857,47 @@ namespace VMES.Database.Vmes.Migrations
 					IdOpc = table.Column<int>(nullable: true),
 					ModoTransmisionPeso = table.Column<int>(nullable: true, defaultValueSql: "((0))"),
 					CadenaPeticion = table.Column<string>(unicode: false, maxLength: 20, nullable: true),
-					OpcConfigId = table.Column<int>(nullable: true)
+					OpcConfigId = table.Column<int>(nullable: false),
+					PlcEnabled = table.Column<bool>(nullable: false),
+					StartIndex = table.Column<int>(nullable: true),
+					Lenght = table.Column<int>(nullable: true)
 				},
 				constraints: table =>
 				{
 					table.PrimaryKey("PK_Basculas", x => x.Id);
 					table.ForeignKey(
-						name: "FK__Basculas__OpcCon__54B68676",
+						name: "FK_Basculas_OpcConfig_OpcConfigId",
 						column: x => x.OpcConfigId,
 						principalTable: "OpcConfig",
-						principalColumn: "Id",
-						onDelete: ReferentialAction.Restrict);
+						principalColumn: "Id");
 					table.ForeignKey(
-						name: "FK_Basculas_Tags",
+						name: "FK_Basculas_Tags_Tag",
 						column: x => x.Tag,
 						principalTable: "Tags",
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
+				});
+
+			migrationBuilder.CreateTable(
+				name: "HumanMachineInterfaces",
+				columns: table => new
+				{
+					Id = table.Column<int>(nullable: false)
+						.Annotation("SqlServer:Identity", "1, 1"),
+					Enabled = table.Column<bool>(nullable: false),
+					Name = table.Column<string>(maxLength: 64, nullable: false),
+					Type = table.Column<byte>(nullable: false),
+					TagId = table.Column<int>(nullable: true)
+				},
+				constraints: table =>
+				{
+					table.PrimaryKey("PK_HumanMachineInterfaces", x => x.Id);
+					table.ForeignKey(
+						name: "FK_HumanMachineInterfaces_Tags_TagId",
+						column: x => x.TagId,
+						principalTable: "Tags",
+						principalColumn: "Id",
+						onDelete: ReferentialAction.Cascade);
 				});
 
 			migrationBuilder.CreateTable(
@@ -10977,6 +10924,11 @@ namespace VMES.Database.Vmes.Migrations
 						principalColumn: "Id",
 						onDelete: ReferentialAction.Restrict);
 				});
+
+			migrationBuilder.InsertData(
+				table: "NetAlarmasTipos",
+				columns: new[] { "Id", "AutoFinalizar", "IdAlarmaPLC", "MostrarUsuario", "Nivel", "RolShow", "TextoError", "UserShow" },
+				values: new object[] { 2050, false, 2050, true, null, null, "Comprobacion Origen Vacio", null });
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Aditivos_Formato",
@@ -11037,6 +10989,16 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_AlertasUsuariosInformesParametros_idAlertaUsuarioInformes",
 				table: "AlertasUsuariosInformesParametros",
 				column: "idAlertaUsuarioInformes");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_AuditColumns_AuditTableId",
+				table: "AuditColumns",
+				column: "AuditTableId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_AuditTables_AuditId",
+				table: "AuditTables",
+				column: "AuditId");
 
 			migrationBuilder.CreateIndex(
 				name: "_dta_index_Backups_1",
@@ -11159,6 +11121,31 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdUsuario");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_BufferERPSolicitudTraspaso_DestinoId",
+				table: "BufferERPSolicitudTraspaso",
+				column: "DestinoId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_BufferERPSolicitudTraspaso_LoteId",
+				table: "BufferERPSolicitudTraspaso",
+				column: "LoteId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_BufferERPSolicitudTraspaso_OrigenId",
+				table: "BufferERPSolicitudTraspaso",
+				column: "OrigenId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_BufferERPSolicitudTraspaso_UsuarioId",
+				table: "BufferERPSolicitudTraspaso",
+				column: "UsuarioId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_BufferERPVentasLineas_BufferErpVentaId",
+				table: "BufferERPVentasLineas",
+				column: "BufferErpVentaId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_BufferERPVersiones_idFormula",
 				table: "BufferERPVersiones",
 				column: "idFormula");
@@ -11274,11 +11261,6 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Provincia");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_CompActivosLista_Unidad",
-				table: "CompActivosLista",
-				column: "Unidad");
-
-			migrationBuilder.CreateIndex(
 				name: "IX_Componentes_Formato",
 				table: "Componentes",
 				column: "Formato");
@@ -11329,14 +11311,9 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idPlantilla");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_ComponentesActivos_IdCompActivosLista",
+				name: "IX_ComponentesActivos_Unidad",
 				table: "ComponentesActivos",
-				column: "IdCompActivosLista");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_ComponentesActivos_Producto",
-				table: "ComponentesActivos",
-				column: "Producto");
+				column: "Unidad");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Compras_Departamento",
@@ -11616,6 +11593,11 @@ namespace VMES.Database.Vmes.Migrations
 				columns: new[] { "Id", "Cantidad", "Ubicacion", "Producto" });
 
 			migrationBuilder.CreateIndex(
+				name: "IDosificaciones1",
+				table: "Dosificaciones",
+				columns: new[] { "Id", "Serie", "IdOld", "Producto", "Formato", "Proceso", "Porcentaje", "Cantidad", "Unidad", "Servida", "NumeroPesadas", "Inicio", "Fin", "Tipo", "Exportado", "Lote", "Ubicacion", "Grupo", "Estado", "Medidor", "CantidadPrincipal", "TipoRegistro", "Importado", "PosicionDosificacion", "CicloActual", "CantidadActual", "UbicacionActual", "IdModulo", "DosiVariable1", "DosiVariable2", "Orden" });
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Electrovalvulas_OpcConfigId",
 				table: "Electrovalvulas",
 				column: "OpcConfigId");
@@ -11689,11 +11671,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_Entradas_idVehiculo",
 				table: "Entradas",
 				column: "idVehiculo");
-
-			migrationBuilder.CreateIndex(
-				name: "IEntradas1",
-				table: "Entradas",
-				columns: new[] { "id", "FechaCreacion", "FechaPrevista", "idVehiculo", "idChofer", "idProveedor", "idTarjeta", "EstadoTransito", "MatriculaCamion", "NombreConductor", "Observaciones", "idEmpresaTransporte", "LedControlDocumental", "MatriculaRemolque", "Precio", "FInicio", "Referencia", "ReferenciaCompra", "PreDesinfeccion", "PostDesinfeccion", "PreDesinfeccionOK", "PostDesinfeccionOK", "exportado", "Serie", "Numero", "FFin", "Estado" });
 
 			migrationBuilder.CreateIndex(
 				name: "IX_EntradasContratos_idContrato",
@@ -12051,6 +12028,16 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idModelo");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_GMAO_ElementReviewTasks_ElementId",
+				table: "GMAO_ElementReviewTasks",
+				column: "ElementId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_GMAO_ElementReviewTasks_TaskId",
+				table: "GMAO_ElementReviewTasks",
+				column: "TaskId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_GMAO_ElemIntervenciones_IDDepartamento",
 				table: "GMAO_ElemIntervenciones",
 				column: "IDDepartamento");
@@ -12094,6 +12081,11 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_GMAO_ElemIntervencionesTrabajos_IdOperario",
 				table: "GMAO_ElemIntervencionesTrabajos",
 				column: "IdOperario");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_GMAO_ElemIntervencionesTrabajos_ReviewTaskId",
+				table: "GMAO_ElemIntervencionesTrabajos",
+				column: "ReviewTaskId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_GMAO_ElemPertenencia_IdHijo",
@@ -12191,6 +12183,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdProducto");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_HumanMachineInterfaces_TagId",
+				table: "HumanMachineInterfaces",
+				column: "TagId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Incompatibilidades_Formula",
 				table: "Incompatibilidades",
 				column: "Formula");
@@ -12211,6 +12208,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdMedidor");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_InformesLib_DefaultPrinterId",
+				table: "InformesLib",
+				column: "DefaultPrinterId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_InformesLib_IdCategoria",
 				table: "InformesLib",
 				column: "IdCategoria");
@@ -12219,6 +12221,11 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_InformesLib_IdInformeBase",
 				table: "InformesLib",
 				column: "IdInformeBase");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_InformesLibUsuarios_DefaultPrinterId",
+				table: "InformesLibUsuarios",
+				column: "DefaultPrinterId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_InformesLibUsuarios_IdInforme",
@@ -12361,16 +12368,6 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Afeccion");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_Medicaciones_idProducto",
-				table: "Medicaciones",
-				column: "idProducto");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_MedicacionesIngredientes_Medicacion",
-				table: "MedicacionesIngredientes",
-				column: "Medicacion");
-
-			migrationBuilder.CreateIndex(
 				name: "IX_MedicacionesIngredientes_Producto",
 				table: "MedicacionesIngredientes",
 				column: "Producto");
@@ -12379,11 +12376,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_MedicacionesIngredientes_Unidad",
 				table: "MedicacionesIngredientes",
 				column: "Unidad");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_Medidores_EstadoForzado",
-				table: "Medidores",
-				column: "EstadoForzado");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Medidores_FamiliaMedidor",
@@ -12424,11 +12416,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_Modulos_Departamento",
 				table: "Modulos",
 				column: "Departamento");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_Modulos_EstadoForzado",
-				table: "Modulos",
-				column: "EstadoForzado");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Modulos_ModuloAsociadoOrdenes1",
@@ -12546,11 +12533,6 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdGrupo");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_NetAlarmas_IdModulo",
-				table: "NetAlarmas",
-				column: "IdModulo");
-
-			migrationBuilder.CreateIndex(
 				name: "IX_NetAlarmas_IdOrigen",
 				table: "NetAlarmas",
 				column: "IdOrigen");
@@ -12581,7 +12563,7 @@ namespace VMES.Database.Vmes.Migrations
 				column: "RespIdProducto");
 
 			migrationBuilder.CreateIndex(
-				name: "_dta_index_NetAlarmas_2",
+				name: "IX_NetAlarmas_Respondido",
 				table: "NetAlarmas",
 				column: "Respondido");
 
@@ -12609,6 +12591,11 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_NetAlarmas_idUbicacion",
 				table: "NetAlarmas",
 				column: "idUbicacion");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_NetAlarmas_IdModulo_Enviada_PostEnvioProcesada",
+				table: "NetAlarmas",
+				columns: new[] { "IdModulo", "Enviada", "PostEnvioProcesada" });
 
 			migrationBuilder.CreateIndex(
 				name: "IX_NetAlarmasAutomaticas_IdAlarmasTipo",
@@ -12676,64 +12663,19 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idTipo");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_Estado",
-				table: "OEEEstados",
-				column: "Estado");
+				name: "IX_NetAlarmasTiposRespuestasOrigenes_NetAlarmasRespuestaId",
+				table: "NetAlarmasTiposRespuestasOrigenes",
+				column: "NetAlarmasRespuestaId");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_IdAlarmaActual",
-				table: "OEEEstados",
-				column: "IdAlarmaActual");
+				name: "IX_NetAlarmasTiposRespuestasOrigenes_NetAlarmasTipoId",
+				table: "NetAlarmasTiposRespuestasOrigenes",
+				column: "NetAlarmasTipoId");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_IdMedidor",
-				table: "OEEEstados",
-				column: "IdMedidor");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_IdModulo",
-				table: "OEEEstados",
-				column: "IdModulo");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_IdOrdenActual",
-				table: "OEEEstados",
-				column: "IdOrdenActual");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_IdTurno",
-				table: "OEEEstados",
-				column: "IdTurno");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstados_OperarioId",
-				table: "OEEEstados",
-				column: "OperarioId");
-
-			migrationBuilder.CreateIndex(
-				name: "_dta_index_OEEEstados_6_140579589__K2_1_3_4_5_6_7_8_9_10_11",
-				table: "OEEEstados",
-				columns: new[] { "id", "IdMedidor", "Estado", "FInicio", "FFinal", "VentanaSegs", "OperarioId", "IdTurno", "IdAlarmaActual", "IdOrdenActual", "IdModulo" });
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstadosMedidores_idMedidor",
-				table: "OEEEstadosMedidores",
-				column: "idMedidor");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEEstadosModulos_idModulo",
-				table: "OEEEstadosModulos",
-				column: "idModulo");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEHorarios_idMedidor",
-				table: "OEEHorarios",
-				column: "idMedidor");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_OEEHorarios_idModulo",
-				table: "OEEHorarios",
-				column: "idModulo");
+				name: "IX_NetAlarmasTiposRespuestasOrigenes_OrigenId",
+				table: "NetAlarmasTiposRespuestasOrigenes",
+				column: "OrigenId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_OpcConfig_GatewayId",
@@ -12846,6 +12788,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Formula");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_Ordenes_IdCab",
+				table: "Ordenes",
+				column: "IdCab");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Ordenes_IdVehiculo",
 				table: "Ordenes",
 				column: "IdVehiculo");
@@ -12871,11 +12818,6 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Medicacion");
 
 			migrationBuilder.CreateIndex(
-				name: "_dta_index_Ordenes_3",
-				table: "Ordenes",
-				column: "Medicada");
-
-			migrationBuilder.CreateIndex(
 				name: "IX_Ordenes_Modulo",
 				table: "Ordenes",
 				column: "Modulo");
@@ -12884,6 +12826,11 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_Ordenes_ProductoDestino",
 				table: "Ordenes",
 				column: "ProductoDestino");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_Ordenes_VentaLineaId",
+				table: "Ordenes",
+				column: "VentaLineaId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Ordenes_Version",
@@ -12906,11 +12853,6 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idTarjeta");
 
 			migrationBuilder.CreateIndex(
-				name: "iOrdenes_estado_ffin",
-				table: "Ordenes",
-				columns: new[] { "Estado", "Fin" });
-
-			migrationBuilder.CreateIndex(
 				name: "IX_OrdenesAutoInicio_idOrden",
 				table: "OrdenesAutoInicio",
 				column: "idOrden");
@@ -12931,6 +12873,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idOrdenPadre");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_OrdenesTransicionEstadosHistory_IdOrden",
+				table: "OrdenesTransicionEstadosHistory",
+				column: "IdOrden");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Origenes_Medidor",
 				table: "Origenes",
 				column: "Medidor");
@@ -12946,14 +12893,25 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdMedidor");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_PLCAddonsVars_idAddon",
-				table: "PLCAddonsVars",
-				column: "idAddon");
+				name: "IX_PrintJobs_PrinterId",
+				table: "PrintJobs",
+				column: "PrinterId");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_PLCRead",
-				table: "PLCRead",
-				column: "Nombre");
+				name: "IX_ProductoMedidorCamino_MedidorId",
+				table: "ProductoMedidorCamino",
+				column: "MedidorId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_ProductoMedidorCamino_ProductoId",
+				table: "ProductoMedidorCamino",
+				column: "ProductoId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_ProductoMedidorCamino_CaminoId_MedidorId_ProductoId",
+				table: "ProductoMedidorCamino",
+				columns: new[] { "CaminoId", "MedidorId", "ProductoId" },
+				unique: true);
 
 			migrationBuilder.CreateIndex(
 				name: "IX_Productos_Afeccion",
@@ -13066,6 +13024,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Unidad");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_ProductosEnvasesEtiquetas_EnvaseId",
+				table: "ProductosEnvasesEtiquetas",
+				column: "EnvaseId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_ProductosGruposIncompatibilidades_IdGrupoIncompatibilidad",
 				table: "ProductosGruposIncompatibilidades",
 				column: "IdGrupoIncompatibilidad");
@@ -13116,6 +13079,16 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idDomicilio");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_Recetas_EspecieId",
+				table: "Recetas",
+				column: "EspecieId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_Recetas_MedicacionId",
+				table: "Recetas",
+				column: "MedicacionId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Recetas_idAfeccion",
 				table: "Recetas",
 				column: "idAfeccion");
@@ -13151,9 +13124,9 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idVeterinario");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_RecetasLineas_idMedicamento",
+				name: "IX_RecetasLineas_ProductoId",
 				table: "RecetasLineas",
-				column: "idMedicamento");
+				column: "ProductoId");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_RecetasLineas_idReceta",
@@ -13276,6 +13249,11 @@ namespace VMES.Database.Vmes.Migrations
 				columns: new[] { "Numero", "Serie" });
 
 			migrationBuilder.CreateIndex(
+				name: "IX_SalidasLinias_MedicacionId",
+				table: "SalidasLinias",
+				column: "MedicacionId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_SalidasLinias_Origen1",
 				table: "SalidasLinias",
 				column: "Origen1");
@@ -13376,6 +13354,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdUnidad");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_SalidasLiniasMedicaciones_ProductoId",
+				table: "SalidasLiniasMedicaciones",
+				column: "ProductoId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_SalidasLiniasMedicaciones_idEnvase",
 				table: "SalidasLiniasMedicaciones",
 				column: "idEnvase");
@@ -13384,11 +13367,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_SalidasLiniasMedicaciones_idFormato",
 				table: "SalidasLiniasMedicaciones",
 				column: "idFormato");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_SalidasLiniasMedicaciones_idMedicamento",
-				table: "SalidasLiniasMedicaciones",
-				column: "idMedicamento");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_SalidasLiniasMedicaciones_idOrigen",
@@ -13481,6 +13459,26 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Sesion");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_SolicitudesAjusteCaudal_OrdenId",
+				table: "SolicitudesAjusteCaudal",
+				column: "OrdenId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_SolicitudesAjusteCaudal_UbicacionId",
+				table: "SolicitudesAjusteCaudal",
+				column: "UbicacionId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_SolicitudesAjusteCaudal_UsuarioId",
+				table: "SolicitudesAjusteCaudal",
+				column: "UsuarioId");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_SolicitudesAjusteCaudal_ProductoId_UbicacionId",
+				table: "SolicitudesAjusteCaudal",
+				columns: new[] { "ProductoId", "UbicacionId" });
+
+			migrationBuilder.CreateIndex(
 				name: "_dta_index_StatusDisks_1",
 				table: "StatusDisks",
 				column: "Id");
@@ -13501,6 +13499,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "Lote");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_Stocks_Ubicacion",
+				table: "Stocks",
+				column: "Ubicacion");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Stocks_Unidad",
 				table: "Stocks",
 				column: "Unidad");
@@ -13514,21 +13517,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_Stocks_idSalidasLineas",
 				table: "Stocks",
 				column: "idSalidasLineas");
-
-			migrationBuilder.CreateIndex(
-				name: "I_StocksUbis",
-				table: "Stocks",
-				columns: new[] { "Ubicacion", "Cantidad", "Estado" });
-
-			migrationBuilder.CreateIndex(
-				name: "IX_Stocks_Ubicacion_Estado",
-				table: "Stocks",
-				columns: new[] { "Lote", "Fecha", "Ubicacion", "Estado" });
-
-			migrationBuilder.CreateIndex(
-				name: "IStocks1",
-				table: "Stocks",
-				columns: new[] { "Producto", "Formato", "Lote", "Envase", "Cantidad", "Unidad", "Fecha", "Estado", "Importado", "Exportado", "Palet", "Procesando", "Observaciones", "idOld", "idEntradasLineas", "idSalidasLineas", "Ubicacion", "Id" });
 
 			migrationBuilder.CreateIndex(
 				name: "IX_StocksReserva_idEntradasLineas",
@@ -13641,14 +13629,14 @@ namespace VMES.Database.Vmes.Migrations
 				column: "IdLinEntrada");
 
 			migrationBuilder.CreateIndex(
-				name: "IX_Tarjetas_IdLinSalida",
-				table: "Tarjetas",
-				column: "IdLinSalida");
-
-			migrationBuilder.CreateIndex(
 				name: "IX_Tarjetas_IdOrdenActual",
 				table: "Tarjetas",
 				column: "IdOrdenActual");
+
+			migrationBuilder.CreateIndex(
+				name: "IX_Tarjetas_IdLinSalida",
+				table: "Tarjetas",
+				column: "IdLinSalida");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_TempControlesMedidores_idMedidor",
@@ -13707,6 +13695,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "OpcConfigId");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_Ubicaciones_Ordenacion",
+				table: "Ubicaciones",
+				column: "Ordenacion");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_Ubicaciones_Producto",
 				table: "Ubicaciones",
 				column: "Producto");
@@ -13715,6 +13708,21 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_Ubicaciones_Unidad",
 				table: "Ubicaciones",
 				column: "Unidad");
+
+			migrationBuilder.CreateIndex(
+				name: "_dta_index_Ubicaciones_1",
+				table: "Ubicaciones",
+				columns: new[] { "Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "MezcladoDiasMinimoFCaducidad", "Visible", "Ordenacion" });
+
+			migrationBuilder.CreateIndex(
+				name: "IndexUbicaciones_1",
+				table: "Ubicaciones",
+				columns: new[] { "Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "MezcladoDiasMinimoFCaducidad", "TipoPR", "ColaPropuesta", "Visible", "Ordenacion" });
+
+			migrationBuilder.CreateIndex(
+				name: "IUbicaciones1",
+				table: "Ubicaciones",
+				columns: new[] { "Id", "Nombre", "Departamento", "Referencia", "Tipo", "CargaManual", "DescargaManual", "Capacidad", "Unidad", "Individual", "Producto", "Formato", "Prioridad", "Stock", "ControlStock", "AvisosActivo", "AvisosEquipo", "MezcladoDiasMinimoFCaducidad", "TipoPR", "ColaPropuesta", "PaMColaMulti", "Visible", "Ordenacion" });
 
 			migrationBuilder.CreateIndex(
 				name: "IX_UbicacionesAsociadas_idUbicacion1",
@@ -13892,6 +13900,11 @@ namespace VMES.Database.Vmes.Migrations
 				column: "idVentas");
 
 			migrationBuilder.CreateIndex(
+				name: "IX_VentasLiniasMedicaciones_ProductoId",
+				table: "VentasLiniasMedicaciones",
+				column: "ProductoId");
+
+			migrationBuilder.CreateIndex(
 				name: "IX_VentasLiniasMedicaciones_idEnvase",
 				table: "VentasLiniasMedicaciones",
 				column: "idEnvase");
@@ -13900,16 +13913,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "IX_VentasLiniasMedicaciones_idFormato",
 				table: "VentasLiniasMedicaciones",
 				column: "idFormato");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_VentasLiniasMedicaciones_idLineaSalidaMedicamento",
-				table: "VentasLiniasMedicaciones",
-				column: "idLineaSalidaMedicamento");
-
-			migrationBuilder.CreateIndex(
-				name: "IX_VentasLiniasMedicaciones_idMedicamento",
-				table: "VentasLiniasMedicaciones",
-				column: "idMedicamento");
 
 			migrationBuilder.CreateIndex(
 				name: "IX_VentasLiniasMedicaciones_idUnidad",
@@ -13956,13 +13959,10 @@ namespace VMES.Database.Vmes.Migrations
 				table: "Veterinarios",
 				column: "IdEmpresa");
 
-			migrationBuilder.AddForeignKey(
-				name: "FK_Medicaciones_Productos",
-				table: "Medicaciones",
-				column: "idProducto",
-				principalTable: "Productos",
-				principalColumn: "Id",
-				onDelete: ReferentialAction.SetNull);
+			migrationBuilder.CreateIndex(
+				name: "IX_Veterinarios_ProvinciaId",
+				table: "Veterinarios",
+				column: "ProvinciaId");
 
 			migrationBuilder.AddForeignKey(
 				name: "FK_Productos_Ubicaciones",
@@ -14291,5836 +14291,10 @@ namespace VMES.Database.Vmes.Migrations
 				principalTable: "TagsLecturas",
 				principalColumn: "id",
 				onDelete: ReferentialAction.Restrict);
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertCertificadoDesinfeccion]
-				   ON  [dbo].[CertificadoDesinfeccion]
-				   AFTER INSERT, UPDATE
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for trigger here
-					declare @mynumero as int
-					select @mynumero  = i.Numero    from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.Serie  from  inserted i;
-
-						SELECT top 1 @mynewnumero= (Numero + 1)
-						FROM CertificadoDesinfeccion as T
-							inner join Series as S on S.Id =@myserie
-						WHERE NOT EXISTS( 		SELECT 1 FROM CertificadoDesinfeccion WHERE (Numero = T.Numero + 1) and Serie = @myserie ) 
-							AND Numero >= S.ContadorCertificadoDesinfeccion
-							AND Serie=@myserie
-						ORDER BY Numero;
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorCertificadoDesinfeccion from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						--UPDATE  a  SET a.Numero = (select isnull( max(Numero)+1, 1) as nn from Compras where Serie = @myserie ) FROM Compras  a JOIN inserted i ON a.Id = i.Id
-						UPDATE  a  SET a.Numero = @mynewnumero FROM CertificadoDesinfeccion  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertCompras]
-				   ON  [dbo].[Compras]
-				   AFTER INSERT,  update
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-					declare @mynumero as int
-					select @mynumero  = i.Numero   from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.Serie  from  inserted i;
-
-						SELECT top 1 @mynewnumero= (Numero + 1)
-						FROM Compras as T
-							inner join Series as S on S.Id =@myserie
-						WHERE NOT EXISTS( 		SELECT 1 FROM Compras WHERE (Numero = T.Numero + 1) and Serie = @myserie ) 
-							AND Numero >= S.ContadorCompras 
-							and Serie=@myserie
-						ORDER BY Numero;
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorCompras from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						--UPDATE  a  SET a.Numero = (select isnull( max(Numero)+1, 1) as nn from Compras where Serie = @myserie ) FROM Compras  a JOIN inserted i ON a.Id = i.Id
-						UPDATE  a  SET a.Numero = @mynewnumero FROM Compras  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertEntradas]
-				   ON  [dbo].[Entradas]
-				   AFTER INSERT, UPDATE
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for trigger here
-					declare @mynumero as int
-					select @mynumero  = i.Numero   from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.Serie  from  inserted i;
-
-						SELECT top 1 @mynewnumero= (Numero + 1)
-						FROM Entradas as T
-							inner join Series as S on S.Id =@myserie
-						WHERE NOT EXISTS( 		SELECT 1 FROM Entradas WHERE (Numero = T.Numero + 1) and Serie = @myserie ) 
-							AND Numero >= S.ContadorEntradas 
-							and Serie=@myserie
-						ORDER BY Numero;
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorEntradas from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						--UPDATE  a  SET a.Numero = (select isnull( max(Numero)+1, 1) as nn from Compras where Serie = @myserie ) FROM Compras  a JOIN inserted i ON a.Id = i.Id
-						UPDATE  a  SET a.Numero = @mynewnumero FROM Entradas  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertRecetas]
-				   ON  [dbo].[Recetas]
-				   AFTER INSERT, UPDATE
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for trigger here
-					declare @mynumero as int
-					select @mynumero  = i.NumReceta    from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.idSerie  from  inserted i;
-
-						SELECT top 1 @mynewnumero= (NumReceta + 1)
-						FROM Recetas as T
-							inner join Series as S on S.Id =@myserie
-						WHERE NOT EXISTS( 		SELECT 1 FROM Recetas WHERE (NumReceta = T.NumReceta + 1) and idSerie = @myserie ) 
-							AND NumReceta >= S.ContadorRecetas
-							AND idSerie=@myserie
-						ORDER BY NumReceta;
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorRecetas from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						--UPDATE  a  SET a.Numero = (select isnull( max(Numero)+1, 1) as nn from Compras where Serie = @myserie ) FROM Compras  a JOIN inserted i ON a.Id = i.Id
-						UPDATE  a  SET a.NumReceta  = @mynewnumero FROM Recetas  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertSalidas]
-				   ON  [dbo].[Salidas]
-				   AFTER INSERT
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for trigger here
-					DECLARE @codigo AS INT;
-					DECLARE @serieId AS INT;
-					DECLARE @nextCodigo AS INT;
-					SELECT @codigo = i.Codigo FROM INSERTED i;
-					SELECT @serieId = i.idSerie FROM INSERTED i;
-
-					-- IF Salida.Codigo is null or 0
-					IF @codigo = 0 OR @codigo IS NULL
-					BEGIN
-
-						-- Get the Salida with the same idSerie that has the biggest Codigo
-						SELECT TOP(1)
-							@nextCodigo = (salida.Codigo + 1)
-						FROM
-							Salidas AS salida
-						WHERE
-							salida.idSerie = @serieId
-						ORDER BY
-							salida.Codigo DESC;
-
-						-- If there are no results
-						IF @@ROWCOUNT = 0
-						BEGIN
-
-							-- Load the ContadorSalidas from the required serieId
-							SELECT 
-								@nextCodigo = serie.ContadorSalidas 
-							FROM 
-								Series AS serie 
-							WHERE 
-								serie.Id = @serieId;
-
-							-- In case the serie.ContadorSalidas is 0, load 1
-							IF @nextCodigo = 0
-							BEGIN
-								SET @nextCodigo = 1;
-							END
-						END
-
-						-- Update the inserted Salida
-						UPDATE salida 
-						SET salida.Codigo = @nextCodigo 
-						FROM Salidas salida 
-						JOIN INSERTED i ON salida.Id = i.Id;
-					END 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertSalidasAlbaranes]
-					ON  [dbo].[SalidasAlbaranes]
-					AFTER INSERT, UPDATE
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for trigger here
-					declare @mynumero as int
-					select @mynumero  = i.Numero   from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.Serie  from  inserted i;
-
-						SELECT top 1 @mynewnumero= (Numero + 1)
-						FROM SalidasAlbaranes as T
-							inner join Series as S on S.Id =@myserie
-						WHERE NOT EXISTS( 		SELECT 1 FROM SalidasAlbaranes WHERE (Numero = T.Numero + 1) and Serie = @myserie ) 
-							AND Numero >= S.ContadorAlbaranes
-							AND Serie=@myserie
-						ORDER BY Numero;
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorAlbaranes from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						UPDATE  a  SET a.Numero = @mynewnumero, a.Auto = 1 FROM SalidasAlbaranes  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-					else
-					begin
-						UPDATE  a  SET a.Auto = 0 FROM SalidasAlbaranes  a JOIN inserted i ON a.Id = i.Id
-					end
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertSalidasViajes]
-				   ON  [dbo].[SalidasViajes]
-				   AFTER INSERT, UPDATE
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for trigger here
-					declare @mynumero as int
-					select @mynumero  = i.Numero   from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.idSerie  from  inserted i;
-
-						--SELECT top 1 @mynewnumero= (Numero + 1)
-						--FROM SalidasViajes as T
-						--	inner join Series as S on S.Id =@myserie
-						--WHERE NOT EXISTS( 		SELECT 1 FROM SalidasViajes WHERE (Numero = T.Numero + 1) and idSerie = @myserie ) 
-						--	AND Numero >= S.ContadorViajes
-						--	AND idSerie=@myserie
-						--ORDER BY Numero;
-
-						SET @mynewnumero = (SELECT MAX(Numero) + 1
-										FROM SalidasViajes as SV
-								inner join Series as S on S.Id = @myserie
-									WHERE Numero >= S.ContadorViajes  
-										and idSerie = @myserie);
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorViajes from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						--UPDATE  a  SET a.Numero = (select isnull( max(Numero)+1, 1) as nn from Compras where Serie = @myserie ) FROM Compras  a JOIN inserted i ON a.Id = i.Id
-						UPDATE  a  SET a.Numero = @mynewnumero FROM SalidasViajes  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [triggerInsertVentas]
-				   ON  [dbo].[Ventas]
-				   AFTER INSERT,  update
-				AS 
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-					declare @mynumero as int
-					select @mynumero  = i.Codigo    from  inserted i;
-
-					if @mynumero =0 or @mynumero is null
-					begin
-
-						declare @myserie as int
-						declare @mynewnumero as int
-	
-						select @myserie = i.idSerie   from  inserted i;
-
-						SELECT top 1 @mynewnumero= (Codigo + 1)
-						FROM Ventas as T
-							inner join Series as S on S.Id =@myserie
-						WHERE NOT EXISTS( 		SELECT 1 FROM Ventas WHERE (Codigo = T.Codigo + 1) and idSerie = @myserie ) 
-							AND Codigo >= S.ContadorCompras 
-							and idSerie=@myserie
-						ORDER BY Codigo;
-
-						IF @@ROWCOUNT = 0
-						begin
-							select @mynewnumero=ContadorVentas from Series where Id=@myserie;
-							if @mynewnumero =0
-							begin
-								set @mynewnumero=1;
-							end
-						end
-
-						--UPDATE  a  SET a.Numero = (select isnull( max(Numero)+1, 1) as nn from Compras where Serie = @myserie ) FROM Compras  a JOIN inserted i ON a.Id = i.Id
-						UPDATE  a  SET a.Codigo  = @mynewnumero FROM [Ventas]  a JOIN inserted i ON a.Id = i.Id
-
-					end 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [Trigger_OrdenPLC]
-				ON [dbo].[Ordenes]
-				AFTER INSERT
-				AS
-				BEGIN
-				DECLARE @ID_ORDEN int
-				SET @ID_ORDEN =(SELECT Id FROM INSERTED)
-
-				UPDATE Ordenes SET OrdenEnvioPLC = @ID_ORDEN WHERE Id IN (SELECT DISTINCT Id FROM INSERTED);
-				insert into OrdenesDatosExtra (id) values (@ID_ORDEN );
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [Trigger_Formulas]
-				ON [dbo].[Formulas]
-				AFTER INSERT
-				AS
-				BEGIN
-				DECLARE @ID_ORDEN int
-				SET @ID_ORDEN =(SELECT Id FROM INSERTED)
-				insert into FormulasDatosExtra (id) values (@ID_ORDEN );
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER TRIGGER [dbo].[Trigger_Version]
-				ON [dbo].[Versiones]
-				AFTER INSERT
-				AS
-				BEGIN
-				DECLARE @ID_ORDEN int
-				SET @ID_ORDEN =(SELECT Id FROM INSERTED)
-				insert into VersionDatosExtra (id) values (@ID_ORDEN );
-				END
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [CantidadSegunTiempo] 
-				(
-					-- Add the parameters for the function here
-					@Cantidad decimal(12,5),
-					@PeriodoInicio datetime,
-					@PeriodoFinal datetime,
-					@FProcesoInicio datetime,
-					@FProcesoFinal datetime
-				)
-				RETURNS decimal(15,8)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @resultado decimal(15,5);
-					DECLARE @porcentaje decimal(15,8);
-
-					declare @TiempoTotalSegsProceso int;
-					declare @TiempoTotalSegsEfectivo int;
-
-	
-
-
-					if (@PeriodoInicio<= @FProcesoInicio and @PeriodoFinal >= @FProcesoFinal)
-					begin
-						set @porcentaje =100;
-						set @resultado =@Cantidad ;
-					end
-					else
-					begin
-						set @TiempoTotalSegsProceso = DATEDIFF(second, @FProcesoInicio, @FProcesoFinal   );
-
-						if(@FProcesoInicio > @PeriodoFinal or @FProcesoFinal < @PeriodoInicio ) 
-						begin
-							set @porcentaje =0;
-						end
-						else
-						begin
-							if (@PeriodoInicio > @FProcesoInicio) 
-								set @FProcesoInicio = @PeriodoInicio;
-							if (@PeriodoFinal < @FProcesoFinal) 
-								set @FProcesoFinal = @PeriodoFinal;
-
-		
-							set @TiempoTotalSegsEfectivo = DATEDIFF(second, @FProcesoInicio, @FProcesoFinal);
-							set @porcentaje =(@TiempoTotalSegsEfectivo*100) / @TiempoTotalSegsProceso;
-							set @resultado = (@Cantidad *@TiempoTotalSegsEfectivo) / @TiempoTotalSegsProceso;
-						end 
-					end
-	
-					--set @resultado = @Cantidad * (@porcentaje /100);
-					-- Return the result of the function
-					RETURN @resultado;
-
-				END
-
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [GetTextoParametro](@Grupo nvarchar(50), @Parametro nvarchar(50), @ValorParametro integer) RETURNS nvarchar(50)
-
-				AS
-				BEGIN
-				   RETURN (SELECT TOP 1 Texto
-							 FROM TextosParametros
-							WHERE Grupo = @Grupo 
-							  AND Parametro = @Parametro
-							  AND idTexto = @ValorParametro);
-				END
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [ProductividadModuloDia] 
-				(
-					-- Add the parameters for the function here
-					@idModulo as int,
-					@fecha as date
-				)
-				RETURNS decimal(18,3)
-				AS
-				BEGIN
-
-					declare @finicio as datetime
-					declare @ffinal as datetime
-					declare @finicio2 as datetime
-					declare @ffinal2 as datetime
-					declare @filtrodiafinal as date
-					declare @producido as decimal(15,5)
-					declare @diffminutos as decimal(18,2)
-					declare @KGHora as decimal(18,3)
-
-					set @filtrodiafinal = dateadd(day, 1, @fecha)
-
-
-				 select top 1 @finicio = Inicio from Ordenes where Modulo =@idModulo and Inicio >@fecha and Inicio<@filtrodiafinal order by Inicio asc;
-				 select top 1 @ffinal = Fin  from Ordenes where Modulo =@idModulo and Inicio >@fecha and Inicio<@filtrodiafinal order by Fin desc;
-
-				 select top 1 @finicio2 = D.Fecha 
-					from Desgloses   as D
-					inner join Ordenes as O on O.id = D.Orden 
-					where  O.Modulo =@idModulo and D.Fecha>@Fecha and D.Fecha <@filtrodiafinal    order by D.Fecha asc;
-
-				 select top 1 @ffinal2 = D.Fecha 
-					from Desgloses   as D
-					inner join Ordenes as O on O.id = D.Orden 
-					where  O.Modulo =@idModulo and D.Fecha>@Fecha and D.Fecha <@filtrodiafinal    order by D.Fecha desc;
- 
-				 /* 
-				 Control, si es 24h... y está produciendo, recoga como fecha de inicio el primer desglose encontrado...
-				 */
-				 if @finicio2 <@finicio 
-				 begin
-					set @finicio = @finicio2 
-				 end
-
-				 if @ffinal2  <@ffinal
-				 begin
-					set @ffinal = @ffinal2 
-				 end
-
-
-
-
-
-				 select @producido= sum(R.Cantidad)  
-				 from Ordenes as O
-				 left outer join Desgloses as R on R.Orden = O.Id 
-				 where O.Modulo =12 and R.Fecha  >@fecha and R.Fecha <@filtrodiafinal
-				 ;
-
-				 set @diffminutos = DATEDIFF( second, @finicio, @ffinal)
-
-				 set @KGHora = @producido / (@diffminutos /60/60)
-
-
-				 return @KGHora
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [RangoFechaInicio] 
-				(
-					-- Add the parameters for the function here
-					@valor nvarchar(50)
-				)
-				RETURNS datetime
-				AS
-				BEGIN
-					-- Declare the return variable here
-					DECLARE @ret datetime
-
-					/*
-					Personalizada
-				Ult. 1 Hora
-				Ult. 3 Horas
-				Ult. 6 Horas
-				Ult. 12 Horas
-				Ult. 24 Horas
-				Ult. 3 días
-				Ult. 7 días
-				Ult. 30 días
-					*/
-
-					select @ret=case
-						when @valor='Ult. 1 Hora' then DATEADD (hour, -1, getdate())
-						when @valor='Ult. 3 Horas' then DATEADD (hour, -3, getdate())
-						when @valor='Ult. 6 Horas' then DATEADD (hour, -6, getdate())
-						when @valor='Ult. 12 Horas' then DATEADD (hour, -12, getdate())
-						when @valor='Ult. 24 Horas' then DATEADD (hour, -24, getdate())
-						when @valor='Ult. 3 días' then DATEADD (day, -3, getdate())
-						when @valor='Ult. 7 días' then DATEADD (day, -7, getdate())
-						when @valor='Ult. 30 días' then DATEADD (day, -30, getdate())
-						else DATEADD (day, -1, getdate())
-					end 
-
-					-- Return the result of the function
-					RETURN @ret
-
-				END
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [VerTurno] 
-				(
-					-- Add the parameters for the function here
-					@fecha as datetime
-				)
-				RETURNS nvarchar(50)
-				AS
-				BEGIN
-					-- Declare the return variable here
-					declare @hora as time = cast(@fecha as time)
-					declare @ret as nvarchar(50) = ''
-
-					select  @ret= max( Nombre)
-					from turnos
-					where (HoraFinal > HoraInicio and @hora >= HoraInicio and @Hora< HoraFinal)
-						or (HoraFinal < HoraInicio and ((@hora >= HoraInicio and @hora < '23:59:59.999') or (@hora >= '00:00:00' and @hora < HoraFinal)))
-
-					RETURN @ret
-
-				END
-
-
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [VerTurnoId] 
-				(
-					-- Add the parameters for the function here
-					@fecha as datetime
-				)
-				RETURNS int
-				AS
-				BEGIN
-					-- Declare the return variable here
-					declare @hora as time = cast(@fecha as time)
-					declare @ret as nvarchar(50) = ''
-
-					select  @ret= max( id )
-					from turnos
-					where (HoraFinal > HoraInicio and @hora >= HoraInicio and @Hora< HoraFinal)
-						or (HoraFinal < HoraInicio and ((@hora >= HoraInicio and @hora < '23:59:59.999') or (@hora >= '00:00:00' and @hora < HoraFinal)))
-
-					RETURN @ret
-
-				END
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [dbo].[ListaStringToInt] (@list nvarchar(MAX))
-				   RETURNS @tbl TABLE (number int NOT NULL) AS
-				BEGIN
-				   DECLARE @pos        int,
-						   @nextpos    int,
-						   @valuelen   int
-
-				   SELECT @pos = 0, @nextpos = 1
-
-				   WHILE @nextpos > 0
-				   BEGIN
-					  SELECT @nextpos = charindex(',', @list, @pos + 1)
-					  SELECT @valuelen = CASE WHEN @nextpos > 0
-											  THEN @nextpos
-											  ELSE len(@list) + 1
-										 END - @pos - 1
-					  INSERT @tbl (number)
-						 VALUES (convert(int, substring(@list, @pos + 1, @valuelen)))
-					  SELECT @pos = @nextpos
-				   END
-				   RETURN
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [dbo].[ProductividadFechasModulo] 
-				(	
-					-- Add the parameters for the function here
-					@finicio as date, 
-					@ffinal as date,
-					@idModulo as int
-				)
-				RETURNS @T table(Fecha date, Productividad decimal(18,3))
-
-				begin	
-
-					declare @diff as int
-					declare @i as int
-					declare @fecha as date
-					declare @Productividad as decimal(18,3)
-
-
-
-
-					set @diff = DATEDIFF (day, @finicio, @ffinal)
-
-					if @diff <0 
-					begin
-						--return 'No valido'
-						--print 'No Valido'
-						return 
-					end
-
-					set @i=@diff
-					set @fecha = @finicio 
-
-					while @i>0
-					begin
-						set @Productividad = isnull( dbo.ProductividadModuloDia (@idModulo , @fecha),0)
-						insert into @T values (@fecha, @Productividad )
-
-
-						set @i = @i-1
-						set @fecha = dateadd(day, 1, @fecha)
-					end
-
-					return  
-	
-					-- Add the SELECT statement with parameter references here
-	
-				end
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [dbo].[SplitInts]  
-				(  
-				   @List      VARCHAR(MAX),  
-				   @Delimiter VARCHAR(255)  
-				)  
-				RETURNS TABLE  
-				AS  
-				  RETURN ( SELECT Item = CONVERT(INT, Item) FROM  
-					  ( SELECT Item = x.i.value('(./text())[1]', 'varchar(max)')  
-						FROM ( SELECT [XML] = CONVERT(XML, '<i>'  
-						+ REPLACE(@List, @Delimiter, '</i><i>') + '</i>').query('.')  
-						  ) AS a CROSS APPLY [XML].nodes('i') AS x(i) ) AS y  
-					  WHERE Item IS NOT NULL  
-				  );
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [dbo].[TVF_TimeRange_Split_To_Grid]
-				(
-					@eventStartTime datetime
-					, @eventDurationMins float
-					, @intervalMins int
-				)
-				RETURNS @retTable table
-				(
-					intervalStartTime datetime
-					,intervalEndTime datetime
-					,eventDurationInIntervalMins float
-				)
-				AS
-				BEGIN
-
-					declare @eventMinuteOfDay int
-					set @eventMinuteOfDay = datepart(hour,@eventStartTime)*60+datepart(minute,@eventStartTime)
-
-					declare @intervalStartMinute int
-					set @intervalStartMinute = @eventMinuteOfDay - @eventMinuteOfDay % @intervalMins
-
-					declare @intervalStartTime datetime
-					set @intervalStartTime = dateadd(minute,@intervalStartMinute,cast(floor(cast(@eventStartTime as float)) as datetime))
-
-					declare @intervalEndTime datetime
-					set @intervalEndTime = dateadd(minute,@intervalMins,@intervalStartTime)
-
-					declare @eventDurationInIntervalMins float
-
-					while (@eventDurationMins>0)
-					begin
-
-						set @eventDurationInIntervalMins = cast(@intervalEndTime-@eventStartTime as float)*24*60
-						if @eventDurationMins<@eventDurationInIntervalMins 
-							set @eventDurationInIntervalMins = @eventDurationMins
-
-						--set @eventDurationInIntervalMins = @eventDurationInIntervalMins *60
-
-						insert into @retTable
-						select @intervalStartTime,@intervalEndTime,@eventDurationInIntervalMins
-
-						set @eventDurationMins = @eventDurationMins - @eventDurationInIntervalMins
-						set @eventStartTime = @intervalEndTime
-
-						set @intervalStartTime = @intervalEndTime
-						set @intervalEndTime = dateadd(minute,@intervalMins,@intervalEndTime)
-					end
-
-					RETURN 
-				END
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [dbo].[TVF_TimeRange_Split_To_GridSeconds]
-				(
-					@eventStartTime datetime
-					, @eventDurationSeconds float
-					, @intervalSeconds int
-				)
-				RETURNS @retTable table
-				(
-					intervalStartTime datetime
-					,intervalEndTime datetime
-					,eventDurationInIntervalSeconds float
-				)
-				AS
-				BEGIN
-	
-					declare @eventSecondOfDay int
-					set @eventSecondOfDay = datepart(hour,@eventStartTime)*60*60+datepart(second,@eventStartTime)+(datepart(minute,@eventStartTime)*60)
-
-					declare @intervalStartSecond int
-					set @intervalStartSecond = @eventSecondOfDay - @eventSecondOfDay % @intervalSeconds
-
-					declare @intervalStartTime datetime
-					set @intervalStartTime = dateadd(second,@intervalStartSecond,cast(floor(cast(@eventStartTime as float)) as datetime))
-
-					declare @intervalEndTime datetime
-					set @intervalEndTime = dateadd(second,@intervalSeconds,@intervalStartTime)
-
-					declare @eventDurationInIntervalSeconds float
-
-					while (@eventDurationSeconds>0)
-					begin
-
-						set @eventDurationInIntervalSeconds = cast(@intervalEndTime-@eventStartTime as float)*24*60*60
-						if @eventDurationSeconds<@eventDurationInIntervalSeconds 
-							set @eventDurationInIntervalSeconds = @eventDurationSeconds
-
-						--set @eventDurationInIntervalMins = @eventDurationInIntervalMins *60
-
-						insert into @retTable
-						select @intervalStartTime,@intervalEndTime,@eventDurationInIntervalSeconds 
-
-						set @eventDurationSeconds = @eventDurationSeconds - @eventDurationInIntervalSeconds
-						set @eventStartTime = @intervalEndTime
-
-						set @intervalStartTime = @intervalEndTime
-						set @intervalEndTime = dateadd(second,@intervalSeconds,@intervalEndTime)
-					end
-
-					RETURN 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER FUNCTION [dbo].[udfRankingProductosFechas] (
-					@fechaInicio DATE,
-					@fechaFin DATE
-				)
-				RETURNS TABLE
-				AS
-				RETURN
-				SELECT DISTINCT ROW_NUMBER() OVER (ORDER BY SUM(d.Cantidad) desc) AS Ranking
-					, d.Producto AS ProductoId
-					, p.Nombre AS ProductoNombre
-					, SUM(d.Cantidad) AS ProductoCantidad
-					FROM Desgloses AS d
-						LEFT OUTER JOIN Productos AS p on p.Id = d.Producto 
-						LEFT OUTER JOIN Ordenes AS o on o.Id = d.Orden
-						LEFT OUTER JOIN Modulos AS m on m.Id = o.Modulo
-				WHERE m.TipoModulo in (120, 140)
-					AND (d.Fecha >= @fechaInicio AND d.Fecha < @fechaFin)
-				GROUP BY d.Producto, p.Nombre
-				-- ORDER BY SUM(d.Cantidad) DESC
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[AddIdOld]
-					-- Add the parameters for the stored procedure here
-					@tabla nvarchar(50) 
-	
-				AS
-				BEGIN
-				DECLARE @SQLString nvarchar(500);
-
-				IF not EXISTS (  SELECT *   FROM   sys.columns   WHERE  object_id = OBJECT_ID(@tabla ) AND name = 'idOld')
-					begin
-						SET @SQLString = 'ALTER TABLE ' + @tabla +' ADD idOld int;'
-						exec sp_executesql @SQLString
-					end
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[AddSerieOld]
-					-- Add the parameters for the stored procedure here
-					@tabla nvarchar(50) 
-	
-				AS
-				BEGIN
-				DECLARE @SQLString nvarchar(500);
-
-				IF not EXISTS (  SELECT *   FROM   sys.columns   WHERE  object_id = OBJECT_ID(@tabla ) AND name = 'SerieOld')
-					begin
-						SET @SQLString = 'ALTER TABLE ' + @tabla +' ADD SerieOld int;'
-						exec sp_executesql @SQLString
-					end
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[AlarmasTop10Modulo] 
-					-- Add the parameters for the stored procedure here
-					@Modulo int,
-					@FechaInicio datetime,
-					@FechaFinal datetime
-	
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					select A.IdError 
-						, MIN (T.textoError) as TxtError
-						, COUNT(*) as contador
-						, AVG(datediff( SECOND , A.FechaError , isnull(A.RespFecha, A.fechaerror))) as MediaRespuesta
-					from NetAlarmas as A
-					left outer join NetAlarmasTipos as T on T.Id = A.IdError  
-					where A.IdModulo =@Modulo
-						and A.FechaError > @FechaInicio 
-						and A.FechaError < @FechaFinal 
-					group by a.IdError 
-					order by COUNT(*) desc
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER procedure [dbo].[CalculoKWVentana] 
-				(
-					-- Add the parameters for the function here
-					@IdMotor int,
-					@FInicio datetime,
-					@FFinal datetime,
-					@IpServidor as nvarchar(50)
-				)
-				AS
-				BEGIN
-					-- Declare the return variable here
-	
-					DECLARE @authHeader NVARCHAR(64);
-				DECLARE @contentType NVARCHAR(64);
-				DECLARE @postData NVARCHAR(MAX);
-				DECLARE @ValorDefecto as decimal(12,3);
-
-				DECLARE @ret INT;
-				DECLARE @token INT;
-				DECLARE @url NVARCHAR(256);
-				Declare @XmlResponse as nvarchar(MAX);
-				declare @xmltable table ( yourXML nvarchar(MAX) );
-
-
-				set @ValorDefecto =-1;
-
-
-				declare @Tabla nvarchar(50); -- 0: la semanal, 1: la semestral, 2: la anual
-				declare @diffsemanas int;
-				set @diffsemanas = (DATEDIFF (week, @FInicio, getdate()));
-
-
-				select @Tabla = case 
-					when @diffsemanas <= 2 then 'Motores'
-					when @diffsemanas <= 26 then 'Semestral"".""Motores'
-					else 'Anual"".""Motores'
-				end 
-
-
-					declare @Consulta as nvarchar(max)
-					set @Consulta ='db=statsVoltec&q=SELECT mean(""KWEnergiaTotal"") FROM ""' + @Tabla + '"" '
-					set @Consulta = @Consulta + 'WHERE (""IdMotorPLC"" = ''' + cast(@IdMotor as nvarchar(10)) + ''') '
-					set @Consulta = @Consulta + ' AND time >= ''' + convert(varchar, @FInicio , 126) + 'Z'' and time <= ''' + convert(varchar, @FFinal , 126) + 'Z'' '
-					set @Consulta = @Consulta + ' GROUP BY ""IdMotorPLC""'
-	
-					SET @url = 'http://' + @IpServidor  + ':8086/query?'
-
-
-
-
-				SET @authHeader = 'BASIC 0123456789ABCDEF0123456789ABCDEF';
-				SET @contentType = 'application/x-www-form-urlencoded';
-
-				-- Open the connection.
-				EXEC @ret = sp_OACreate 'MSXML2.ServerXMLHTTP', @token OUT;
-				IF @ret <> 0 RAISERROR('Unable to open HTTP connection.', 10, 1);
-				--IF @ret <> 0 return 0;
-
-				-- Send the request.
-				EXEC @ret = sp_OAMethod @token, 'open', NULL, 'POST', @url, 'false';
-				EXEC @ret = sp_OAMethod @token, 'setRequestHeader', NULL, 'Authentication', @authHeader;
-				EXEC @ret = sp_OAMethod @token, 'setRequestHeader', NULL, 'Content-type', @contentType;
-				EXEC @ret = sp_OAMethod @token, 'send', NULL, @Consulta;
-
-
-				INSERT @xmltable  ( yourXML ) EXEC @ret = sp_OAGetProperty @token, 'responseText'-- , @Response OUT 
-
-				-- Close the connection.
-				EXEC @ret = sp_OADestroy @token;
-				IF @ret <> 0 RAISERROR('Unable to close HTTP connection.', 10, 1);
-				--IF @ret <> 0 return 0;
-
-				select @XmlResponse=yourXML   from @xmltable 
-
-
-				SELECT CAST(JSON_Value (p.value, '$[1]') as numeric (12,3)) as ValorMaximetro
-					FROM OPENJSON (@XmlResponse, 'lax $.results[0].series') as c
-						cross APPLY OPENJSON (c.value, '$.values') as p;
-	
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[ConsumoKWMotores] 
-					-- Add the parameters for the stored procedure here
-					@FechaInicio datetime 
-					, @FechaFin datetime
-					, @NumMuestras int
-					, @ListaMotores nvarchar(max)
-					, @IpServidor as nvarchar(20)
-					, @Sumado as bit =0
-					--<@Param1, sysname, @p1> <Datatype_For_Param1, , int> = <Default_Value_For_Param1, , 0>, 
-					--<@Param2, sysname, @p2> <Datatype_For_Param2, , int> = <Default_Value_For_Param2, , 0>
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-
-					declare @xmltable table ( yourXML nvarchar(MAX) );
-	
-					declare @datos table ( 
-					IdMotor nvarchar(5)
-					, Fecha  datetime
-					, KW decimal(15,3)
-					, MaxKW decimal(15,3)
-					, MinKW decimal(15,3)
-					, KWEfectiva decimal(15,3)
-					, MaxKWEfectiva decimal(15,3)
-					, MinKWEfectiva decimal(15,3)
-					, Turno nvarchar(50)
-				)
-
-
-
-
-
-				DECLARE @authHeader NVARCHAR(64);
-				DECLARE @contentType NVARCHAR(64);
-				DECLARE @postData NVARCHAR(MAX);
-				DECLARE @responseText NVARCHAR(MAX);
-				DECLARE @responseText2 VARBINARY(MAX);
-				--DECLARE @responseText ntext;
-				DECLARE @responseXML xml;
-				DECLARE @ret INT;
-				DECLARE @status NVARCHAR(32);
-				DECLARE @statusText NVARCHAR(32);
-				DECLARE @token INT;
-				DECLARE @url NVARCHAR(256);
-				Declare @XmlResponse as nvarchar(MAX);
-
-
-				DECLARE @i int
-				declare @motores table (nombre nvarchar(50))
-				declare @filtromotores as nvarchar(max) = '';
-				declare @motoractual as nvarchar(50);
-
-				set @FechaInicio = DATEADD(mi, -1 * DATEDIFF(mi, GETUTCDATE(), GETDATE()), @FechaInicio ) ;
-				set @FechaFin = DATEADD(mi, -1 * DATEDIFF(mi, GETUTCDATE(), GETDATE()), @FechaFin ) ;
-
-				insert into @motores SELECT value FROM STRING_SPLIT(@ListaMotores, ',') WHERE RTRIM(value)<>''
-
-				DECLARE cmotores CURSOR FOR  select nombre from  @motores ;
-					OPEN cmotores  
-					FETCH NEXT FROM cmotores   INTO @motoractual
-					WHILE @@FETCH_STATUS = 0  
-						BEGIN  
-								if (@filtromotores ='')
-									begin
-									set @filtromotores = '(""IdMotorPLC"" = ' + '''' + @motoractual + '''' ;
-									end
-								else
-									begin
-									set @filtromotores = @filtromotores + ' or ""IdMotorPLC"" = ' + '''' + @motoractual + '''' ;
-									end	
-
-							FETCH NEXT FROM cmotores   INTO @motoractual
-						END   
-					CLOSE cmotores;  
-					DEALLOCATE cmotores;  
-
-				--filtro de fechas
-				declare @tiempototal as int
-				declare @particionessegundos as int
-
-				if @NumMuestras > 500 
-				begin
-					return 'Error, máximo número de muestras 200'
-				end
-
-
-				if (@FechaInicio >= @FechaFin )
-					begin
-						return 'Error, fecha fin anterior a fecha inicio.'
-					end
-
-				set @tiempototal = DATEDIFF(SECOND , @FechaInicio , @FechaFin )
-				set @particionessegundos = @tiempototal / @NumMuestras ;
-
-
-
-
-				--filtro de muestras
-				/*
-				**************************************************************************************************
-				Según la fecha inicio ... habrá que consultar a una tabla u otra ...
-				Por defecto, 2 semanas la normal, hasta 26 semanas la semestral y resto la anual.
-				Más adelante, las semanas de cada uno debería ir por la tabla de opciones y asi sea configurable esta parte.
-
-				*/	
-
-				declare @Tabla int; -- 0: la semanal, 1: la semestral, 2: la anual
-				declare @diffsemanas int;
-				set @diffsemanas = (DATEDIFF (week, @FechaInicio, getdate()));
-
-
-				select @Tabla = case 
-					when (@particionessegundos<10 and @diffsemanas <= 2) Or @NumMuestras =1 then 0
-					when @particionessegundos<60 and @diffsemanas <= 26 then 1
-					else 2
-				end 
-
-				-- *************************
-	
-
-
-				SET @authHeader = 'BASIC 0123456789ABCDEF0123456789ABCDEF';
-				SET @contentType = 'application/x-www-form-urlencoded';
-
-
-				if @Sumado =0 
-				begin
-					if @Tabla = 0 
-						SET @postData = 'db=statsVoltec&q=SELECT median(""PotenciaTotal""), MAX(""PotenciaTotal""), MIN(""PotenciaTotal""), median(""PotenciaEfectiva""), MAX(""PotenciaEfectiva""), MIN(""PotenciaEfectiva""), median(""PotenciaReactiva""), MAX(""PotenciaReactiva""), MIN(""PotenciaReactiva"") FROM ""Motores"" WHERE ' 
-					else if @Tabla =1 
-						SET @postData = 'db=statsVoltec&q=SELECT median(""PotenciaTotal""), MAX(""MaxPotenciaTotal""), MIN(""MinPotenciaTotal""), median(""PotenciaEfectiva""), MAX(""MaxPotenciaEfectiva""), MIN(""MinPotenciaEfectiva""), median(""PotenciaReactiva""), MAX(""PotenciaReactiva""), MIN(""PotenciaReactiva"") FROM ""Semestral"".""Motores"" WHERE ' 
-					else
-						SET @postData = 'db=statsVoltec&q=SELECT median(""PotenciaTotal""), MAX(""MaxPotenciaTotal""), MIN(""MinPotenciaTotal""), median(""PotenciaEfectiva""), MAX(""MaxPotenciaEfectiva""), MIN(""MinPotenciaEfectiva""), median(""PotenciaReactiva""), MAX(""PotenciaReactiva""), MIN(""PotenciaReactiva"") FROM ""Anual"".""Motores"" WHERE ' 
-				end
-				else
-				begin
-					if @Tabla = 0 
-						begin
-							Set @postData ='db=statsVoltec&q=select sum(PotenciaTotal) as PotenciaTotal, sum(MaxPotenciaTotal) as MaxPotenciaTotal, sum(MinPotenciaTotal) as MinPotenciaTotal,  ';
-							Set @postData = @postData + 'sum(PotenciaEfectiva) as PotenciaEfectiva, sum(MaxPotenciaEfectiva) as MaxPotenciaEfectiva, sum(MinPotenciaEfectiva) as MinPotenciaEfectiva ';
-							Set @postData = @postData + 'sum(PotenciaReactiva) as PotenciaReactiva, sum(MaxPotenciaReactiva) as MaxPotenciaReactiva, sum(MinPotenciaReactiva) as MinPotenciaReactiva from ';
-							Set @postData = @postData + '(SELECT median(""PotenciaTotal"") as PotenciaTotal, MAX(""PotenciaTotal"") as MaxPotenciaTotal, MIN(""PotenciaTotal"") as MinPotenciaTotal, median(""PotenciaEfectiva"") as PotenciaEfectiva, MAX(""PotenciaEfectiva"") as MaxPotenciaEfectiva, MIN(""PotenciaEfectiva"") as MinPotenciaEfectiva, median(""PotenciaReactiva"") as PotenciaReactiva, MAX(""PotenciaReactiva"") as MaxPotenciaReactiva, MIN(""PotenciaReactiva"") as MinPotenciaReactiva FROM ""Motores"" WHERE ' 
-						end 
-					else if @Tabla =1 
-						begin
-							Set @postData ='db=statsVoltec&q=select sum(PotenciaTotal) as PotenciaTotal, sum(MaxPotenciaTotal) as MaxPotenciaTotal, sum(MinPotenciaTotal) as MinPotenciaTotal,  ';
-							Set @postData = @postData + 'sum(PotenciaEfectiva) as PotenciaEfectiva, sum(MaxPotenciaEfectiva) as MaxPotenciaEfectiva, sum(MinPotenciaEfectiva) as MinPotenciaEfectiva ';
-							Set @postData = @postData + 'sum(PotenciaReactiva) as PotenciaReactiva, sum(MaxPotenciaReactiva) as MaxPotenciaReactiva, sum(MinPotenciaReactiva) as MinPotenciaReactiva from ';
-							Set @postData = @postData + '(SELECT median(""PotenciaTotal"") as PotenciaTotal, MAX(""MaxPotenciaTotal"") as MaxPotenciaTotal, MIN(""MinPotenciaTotal"") as MinPotenciaTotal, median(""PotenciaEfectiva"") as PotenciaEfectiva, MAX(""MaxPotenciaEfectiva"") as MaxPotenciaEfectiva, MIN(""MinPotenciaEfectiva"") as MinPotenciaEfectiva, median(""PotenciaReactiva"") as PotenciaReactiva, MAX(""MaxPotenciaReactiva"") as MaxPotenciaReactiva, MIN(""MinPotenciaReactiva"") as MinPotenciaReactiva FROM ""Semestral"".""Motores"" WHERE ' 
-						end
-					else
-						begin
-							Set @postData ='db=statsVoltec&q=select sum(PotenciaTotal) as PotenciaTotal, sum(MaxPotenciaTotal) as MaxPotenciaTotal, sum(MinPotenciaTotal) as MinPotenciaTotal,  ';
-							Set @postData = @postData + 'sum(PotenciaEfectiva) as PotenciaEfectiva, sum(MaxPotenciaEfectiva) as MaxPotenciaEfectiva, sum(MinPotenciaEfectiva) as MinPotenciaEfectiva ';
-							Set @postData = @postData + 'sum(PotenciaReactiva) as PotenciaReactiva, sum(MaxPotenciaReactiva) as MaxPotenciaReactiva, sum(MinPotenciaReactiva) as MinPotenciaReactiva from ';
-							Set @postData = @postData + '(SELECT median(""PotenciaTotal"") as PotenciaTotal, MAX(""MaxPotenciaTotal"") as MaxPotenciaTotal, MIN(""MinPotenciaTotal"") as MinPotenciaTotal, median(""PotenciaEfectiva"") as PotenciaEfectiva, MAX(""MaxPotenciaEfectiva"") as MaxPotenciaEfectiva, MIN(""MinPotenciaEfectiva"") as MinPotenciaEfectiva, median(""PotenciaReactiva"") as PotenciaReactiva, MAX(""MaxPotenciaReactiva"") as MaxPotenciaReactiva, MIN(""MinPotenciaReactiva"") as MinPotenciaReactiva FROM ""Anual"".""Motores"" WHERE ' 
-						end
-				end
-
-		
-				if (@filtromotores <>'')
-					begin
-						set @filtromotores = @filtromotores + ')';
-						set @postData = @postData + @filtromotores + ' and ';
-					end
-				if @NumMuestras > 1
-					if @Sumado =0 
-						set @postdata = @postdata + 'time >= ''' + convert(varchar, @FechaInicio , 126) + 'Z'' and time <= ''' + convert(varchar, @FechaFin , 126) + 'Z'' GROUP BY time(' + cast(@particionessegundos as nvarchar(20)) + 's), ""IdMotorPLC""'
-					else
-						set @postdata = @postdata + 'time >= ''' + convert(varchar, @FechaInicio , 126) + 'Z'' and time <= ''' + convert(varchar, @FechaFin , 126) + 'Z'' GROUP BY ""IdMotorPLC"") 
-						where time >= ''' + convert(varchar, @FechaInicio , 126) + 'Z'' and time <= ''' + convert(varchar, @FechaFin , 126) + 'Z''  GROUP BY time(' + cast(@particionessegundos as nvarchar(20)) + 's)'
-
-	
-				else
-					if @Sumado =0 
-						set @postdata = @postdata + 'time >= ''' + convert(varchar, @FechaInicio , 126) + 'Z'' and time <= ''' + convert(varchar, @FechaFin , 126) + 'Z'' GROUP BY ""IdMotorPLC""'
-					else
-						set @postdata = @postdata + 'time >= ''' + convert(varchar, @FechaInicio , 126) + 'Z'' and time <= ''' + convert(varchar, @FechaFin , 126) + 'Z'') group by  time(' + cast(@particionessegundos as nvarchar(20)) + 's) GROUP BY ""IdMotorPLC""'
-
-
-				--=~ /aa|bb/
-				--SET @url = 'http://192.168.200.13:8086/query?'
-				SET @url = 'http://' + @IpServidor  + ':8086/query?'
-
-				-- Open the connection.
-				EXEC @ret = sp_OACreate 'MSXML2.ServerXMLHTTP', @token OUT;
-				IF @ret <> 0 RAISERROR('Unable to open HTTP connection.', 10, 1);
-
-				-- Send the request.
-				EXEC @ret = sp_OAMethod @token, 'open', NULL, 'POST', @url, 'false';
-				EXEC @ret = sp_OAMethod @token, 'setRequestHeader', NULL, 'Authentication', @authHeader;
-				EXEC @ret = sp_OAMethod @token, 'setRequestHeader', NULL, 'Content-type', @contentType;
-				EXEC @ret = sp_OAMethod @token, 'send', NULL, @postData;
-
-
-				INSERT @xmltable  ( yourXML ) EXEC @ret = sp_OAGetProperty @token, 'responseText'--, @Response OUT 
-
-				-- Close the connection.
-				EXEC @ret = sp_OADestroy @token;
-				IF @ret <> 0 RAISERROR('Unable to close HTTP connection.', 10, 1);
-
-
-				-- Show the response.
-				--PRINT 'Status: ' + @status + ' (' + @statusText + ')';
-				--PRINT 'Response text: ' + @responseText;
-
-				select @XmlResponse=yourXML   from @xmltable 
-
-
-
-				if @Sumado =0
-					SELECT
-						CAST(JSON_Value (c.value, '$.tags.IdMotorPLC') as int) as IdMotor,
-						m.TAG as Tag,
-						DATEADD(mi, DATEDIFF(mi, GETUTCDATE(), GETDATE()), JSON_Value (p.value, '$[0]') )   as Fecha ,
-						CAST(JSON_Value (p.value, '$[1]') as numeric (12,3)) as PotenciaTotal,
-						CAST(JSON_Value (p.value, '$[2]') as numeric (12,3)) as MaxPotenciaTotal,
-						CAST(JSON_Value (p.value, '$[3]') as numeric (12,3)) as MinPotenciaTotal,
-						CAST(JSON_Value (p.value, '$[4]') as numeric (12,3)) as PotenciaEfectiva,
-						CAST(JSON_Value (p.value, '$[5]') as numeric (12,3)) as MaxPotenciaEfectiva,
-						CAST(JSON_Value (p.value, '$[6]') as numeric (12,3)) as MinPotenciaEfectiva,
-						CAST(JSON_Value (p.value, '$[7]') as numeric (12,3)) as PotenciaReactiva,
-						CAST(JSON_Value (p.value, '$[8]') as numeric (12,3)) as MaxPotenciaReactiva,
-						CAST(JSON_Value (p.value, '$[9]') as numeric (12,3)) as MinPotenciaReactiva,
-						dbo.VerTurno(JSON_Value (p.value, '$[0]')) as Turno
-					FROM OPENJSON (@XmlResponse, 'lax $.results[0].series') as c
-						cross APPLY OPENJSON (c.value, '$.values') as p
-						left outer join Motores as m on JSON_Value (c.value, '$.tags.IdMotorPLC') = m.idPLC 
-					order by Fecha, IdMotor;
-				else
-					SELECT
-						0 as IdMotor,
-						'' as Tag,
-						DATEADD(mi, DATEDIFF(mi, GETUTCDATE(), GETDATE()), JSON_Value (p.value, '$[0]') )   as Fecha ,
-						CAST(JSON_Value (p.value, '$[1]') as numeric (12,3)) as PotenciaTotal,
-						CAST(JSON_Value (p.value, '$[2]') as numeric (12,3)) as MaxPotenciaTotal,
-						CAST(JSON_Value (p.value, '$[3]') as numeric (12,3)) as MinPotenciaTotal,
-						CAST(JSON_Value (p.value, '$[4]') as numeric (12,3)) as PotenciaEfectiva,
-						CAST(JSON_Value (p.value, '$[5]') as numeric (12,3)) as MaxPotenciaEfectiva,
-						CAST(JSON_Value (p.value, '$[6]') as numeric (12,3)) as MinPotenciaEfectiva,
-						CAST(JSON_Value (p.value, '$[7]') as numeric (12,3)) as PotenciaReactiva,
-						CAST(JSON_Value (p.value, '$[8]') as numeric (12,3)) as MaxPotenciaReactiva,
-						CAST(JSON_Value (p.value, '$[9]') as numeric (12,3)) as MinPotenciaReactiva,
-						dbo.VerTurno(JSON_Value (p.value, '$[0]')) as Turno
-					FROM OPENJSON (@XmlResponse, 'lax $.results[0].series') as c
-						cross APPLY OPENJSON (c.value, '$.values') as p
-					order by Fecha;
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[DashProduccion] 
-					@finicio as datetime,
-					@ffinal as datetime
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for procedure here
-	
-
-					select * from DashOrdenes where Fecha >= @finicio  and Fecha<= @ffinal 
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[DashProduccionUlt7Dias] 
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for procedure here
-					declare @fecha as date 
-					set @fecha = DATEadd (day, -7, getdate())
-
-					select * from DashOrdenes where Fecha > @fecha
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[EnergiaRellenoAlarmasSobreConsumo] 
-					-- Add the parameters for the stored procedure here
-					@Inicio date = '01-01-2000',
-					@Fin date = '01-01-2000',
-					@MaxMotor int =10
-				AS
-				BEGIN
-	
-					SET NOCOUNT ON;
-
-					if @Inicio = '01-01-2000'
-					begin
-						set @Inicio = DATEADD ( month, -1, getdate())
-						set @Fin = DATEADD ( week, 1, getdate())
-					end
-	 
-					declare @Fecha as datetime 
-					declare @tiempoExtra as int
-					declare @aleatorio as int
-					declare @duracion as int
-					declare @idmotor as int
-					declare @tipoerror as int
-					declare @tipoalarma as int
-					declare @respuesta as int
-					declare @finAlarma as datetime
-
-
-
-					select @respuesta =id from NetAlarmasRespuestas where IdPlc =8
-
-					set @Fecha = @Inicio 
-
-					while @Fecha < @Fin
-					begin
-						set @aleatorio = RAND() * 100
-						if @aleatorio >80 and datepart(hour,@Fecha) <22 and datepart(hour,@Fecha) > 06
-						begin
-							--Si entramos aquí.. hay alarma...
-							set @duracion = 40 + (RAND() * 300) --en segundos...
-							set @finAlarma = DATEADD( second, @duracion, @Fecha)
-
-							set @idmotor = RAND() * @MaxMotor 
-
-							--con aleatorio, decidimos si es consumo alto o excesivo... (80 para alto, 20 para excesivo)
-							set @aleatorio = RAND() * 100
-							if @aleatorio <80
-							begin
-								set @tipoerror =800
-								select @tipoalarma=id from NetAlarmasTipos where IdAlarmaPLC =800
-							end
-							else
-							begin
-								set @tipoerror = 810
-								select @tipoalarma=id from NetAlarmasTipos where IdAlarmaPLC =810
-							end
-
-			
-
-							insert into NetAlarmas (Interno , TipoInterno , Respondido , Enviada , IdModulo, idMotor , IdPlc , RequiereRespuesta, MostrarAUsuario , FechaError , IdError , txtError , FechaRecibido , Respuesta , RespFecha )
-							values (1, @tipoerror , 1, 1, 12, @idmotor , @tipoalarma, 1, 1, @Fecha , @tipoalarma , '' , @Fecha, @respuesta, @finAlarma )
-
-						end
-
-
-						--Proxima revisión de posible alarma... 
-						set @tiempoExtra = RAND() * 15
-						set @Fecha = DATEADD(minute, 10 + @tiempoExtra , @fecha)
-					end
-
-
-
-	
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[GenerarIdMuestraEntrada]
-					-- Add the parameters for the stored procedure here
-					@IdLinea int
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					if (@IdLinea is null or @IdLinea =0 )
-					begin
-						return
-					end
-
-
-					Declare @idMuestra int;
-
-
-
-					select @idMuestra = IdMuestra from EntradasLineas where id = @IdLinea ;
-
-					if (@idMuestra is not null and @idMuestra >0)
-					begin
-						return  --Ya tiene idmuestra
-					end
-
-					--Buscamos el último
-					select top 1 @idMuestra = IdMuestra from EntradasLineas where IdMuestra is not null order by IdMuestra desc ;
-
-					if (@idMuestra is null or @idMuestra =0)
-					begin
-						set @idMuestra =0;
-					end
-
-					set @idMuestra =@idMuestra +1;
-
-					update EntradasLineas set IdMuestra =@idMuestra where id=@IdLinea ;
-
-
-
-
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[GenerarKWEnOrdenesTeoricos] 
-					-- Add the parameters for the stored procedure here
-					@TotalKWTonelada decimal
-					, @PorcConsumo decimal
-					, @PorcProducido decimal
-					, @PorcMolino decimal
-					, @PorcGranuladora decimal
-					, @PorcProduccion decimal
-					, @PorcTuneles decimal
-					, @PorcEntradas decimal
-					, @MargenAleatorio decimal
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-	
-				/*
-				set @TotalKWTonelada =60
-				set @PorcConsumo =30
-				set @PorcProducido =70
-
-				set @PorcMolino =30
-				set @PorcGranuladora =50
-				set @PorcProduccion =15
-				set @PorcTuneles =2
-				set @PorcEntradas =5
-				set @MargenAleatorio =15
-				*/
-
-
-
-				declare @idItem int;
-				declare @idOrden int;
-				declare @idModulo int;
-				declare @Cantidad decimal(18,3);
-
-				declare @KWaGastar decimal (18,3);
-				declare @aleatorio decimal(5,2)
-				declare @tipomodulo int
-
-				DECLARE cur CURSOR FOR   
-					SELECT Id  , Orden , Cantidad 
-					FROM Resultados 
-					ORDER BY Id asc;  
-
-				OPEN cur  
-
-				FETCH NEXT FROM cur INTO @idItem, @idOrden, @Cantidad
-
-				WHILE @@FETCH_STATUS = 0  
-					BEGIN  
-						--BUscamos tipo de módulo
-		
-						select @tipomodulo = M.TipoModulo
-							from Ordenes as O
-							inner join Modulos as M on M.Id = O.Modulo 
-							where O.id =@idOrden ;
-
-				set @aleatorio =1 + (rand() * @MargenAleatorio /100)
-
-				select @KWaGastar=
-					case 
-						--entradas
-						when @idModulo in (0,1,2,3,4,6,100) then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcEntradas * @aleatorio 
-						--Molinos
-						when @idModulo =7 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcMolino * @aleatorio 
-						--granuladoras
-						when @idModulo =140 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcGranuladora  * @aleatorio 
-						--Produccion
-						when @idModulo =120 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcGranuladora  * @aleatorio 
-						--salidas tuneles
-						when @idModulo =5 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcTuneles   * @aleatorio
-						else ((@Cantidad * @TotalKWTonelada / 1000) / 100) * 1   * @aleatorio
-					end
-
-					set @aleatorio = 1+ (rand() * @MargenAleatorio /100)
-
-					update Resultados set KwhEfectivo = (@KWaGastar /100 * @PorcConsumo ), KWhTotal = (@KWaGastar /100 * @PorcConsumo )* @aleatorio 
-						where id = @idItem 
-
-
-						FETCH NEXT FROM cur INTO @idItem, @idOrden, @Cantidad
-					END   
-
-				CLOSE cur;  
-				DEALLOCATE cur;  
-
-
-
-				DECLARE cur2 CURSOR FOR   
-					SELECT Id  , Orden , Cantidad 
-					FROM Desgloses  
-					ORDER BY Id asc;  
-
-				OPEN cur2  
-
-				FETCH NEXT FROM cur2 INTO @idItem, @idOrden, @Cantidad
-
-				WHILE @@FETCH_STATUS = 0  
-					BEGIN  
-						--BUscamos tipo de módulo
-		
-						select @tipomodulo = M.TipoModulo
-							from Ordenes as O
-							inner join Modulos as M on M.Id = O.Modulo 
-							where O.id =@idOrden ;
-
-				set @aleatorio =1 + (rand() * @MargenAleatorio /100)
-
-				select @KWaGastar=
-					case 
-						--entradas
-						when @idModulo in (0,1,2,3,4,6,100) then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcEntradas * @aleatorio 
-						--Molinos
-						when @idModulo =7 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcMolino * @aleatorio 
-						--granuladoras
-						when @idModulo =140 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcGranuladora  * @aleatorio 
-						--Produccion
-						when @idModulo =120 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcGranuladora  * @aleatorio 
-						--salidas tuneles
-						when @idModulo =5 then ((@Cantidad * @TotalKWTonelada / 1000) / 100) * @PorcTuneles   * @aleatorio
-						else ((@Cantidad * @TotalKWTonelada / 1000) / 100) * 1   * @aleatorio
-					end
-
-					set @aleatorio = 1+ (rand() * @MargenAleatorio /100)
-
-					update Desgloses  set KwhEfectivo = (@KWaGastar /100 * @PorcProducido  ), KWhTotal = (@KWaGastar /100 * @PorcProducido )* @aleatorio 
-						where id = @idItem 
-
-
-						FETCH NEXT FROM cur2 INTO @idItem, @idOrden, @Cantidad
-					END   
-
-				CLOSE cur2;  
-				DEALLOCATE cur2;  
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[GetNewLote]
-				@lote int OUTPUT 
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-						-- Declare the return variable here
-					--DECLARE @lote int;
-					Declare @fecha date = null;
-					declare @campo nvarchar(50);
-					set @campo ='Lotes';
-
-					set @lote=-1;
-	
-					 select @lote=Contador, @fecha = Fecha  from Contadores where Nombre=@campo 
-
-					 if @fecha is null
-						begin
-							insert into Contadores(Nombre,Contador,Fecha,Visible) values(@campo, 0, cast(GETDATE() as date), 1);
-							set @lote=0;
-						end
-					 else
-						begin
-							if @fecha = cast(GETDATE() as date) 
-								begin
-									update Contadores set Contador=@Lote+1 where Nombre=@campo ;
-									set @lote=@lote+1;
-								end	
-							else
-								begin
-									update Contadores set Contador=0, Fecha =getdate() where Nombre=@campo ;
-									set @lote=0;
-								end
-						end
-
-
-
-					-- Return the result of the function
-					--select @lote;
-					--return
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[GrabarReadPLC] 
-					-- Add the parameters for the stored procedure here
-					@nombre nvarchar(50),
-					@posicion int,
-					@valor nvarchar(100)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-
-					if exists(Select 1 From PLCRead  Where Nombre  = @nombre and posicion=@posicion )
-					  BEGIN
-							update PLCRead set Valor=@valor, UltimaLectura=GETDATE () where Nombre=@nombre and posicion=@posicion 
-					   END
-					ELSE
-					  BEGIN
-							insert into PLCRead (Nombre, posicion, Valor, UltimaLectura) values (@nombre, @posicion,  @valor, GETDATE ())
-					  END
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[LimpiezaBaseDatos] 
-					@password nvarchar(20) = N''
-				AS
-				BEGIN
-					DECLARE @return_value int = 0
-
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					IF @password = '1_voltecsl'
-					BEGIN
-						SET @return_value = 0
-
-						--DesActivamos los constaints
-						EXEC sp_MSforeachtable @command1=""ALTER TABLE ? NOCHECK CONSTRAINT ALL""
-
-						--Iniciamos el borrado de datos
-						delete from Aditivos;
-						delete from Afecciones;
-						delete from Alarmas;
-						delete from Analisis;
-						delete from Backups;
-						--delete from Basculas;
-						delete from BufferConsumidos;
-						delete from BufferERPCabOrdenes;
-						delete from BufferERPConsumidos ;
-						delete from BufferERPLinOrdenes;
-						delete from BufferERPProducidos;
-						delete from BufferERPStocks;
-						delete from BufferProducidos;
-						delete from BufferERPFormulaProductosFinales ;
-						delete from BufferERPFormulas ;
-
-						delete from CertificadoDesinfeccion ;
-		
-
-						delete from CabOrdenes;
-						delete from Choferes;
-						delete from Clientes;
-						delete from CompActivosLista;
-						delete from Componentes;
-						delete from ComponentesActivos;
-						delete from Compras;
-						delete from Contadores;
-						delete from Contratos;
-						delete from ControlesNIR;
-						delete from ControlesNIRProductos;
-						--Departamentos
-						delete from Desgloses;
-						--Destinos
-						--DestinosMedidores
-						delete from Disposiciones;
-						delete from Documentos;
-						delete from Domicilios;
-						delete from Dominios;
-						delete from Dosificaciones;
-						delete from Empresas;
-						delete from EmpresasTransporte;
-						delete from Entradas;
-						delete from EntradasContratos;
-						delete from EntradasLineas;
-						delete from EntradasLineasResultadosNIR;
-						delete from EntradasLotes;
-						delete from Etiquetas;
-						delete from Eventos;
-						delete from EventosDetalle;
-						delete from Existencias;
-						--Familias
-						--FamiliasMedidor
-						--Formatos
-						delete from FormulaProdModulo;
-						delete from Formularios;
-						delete from Formulas;
-						delete from GruposIncompatibilidades;
-						delete from GruposIncompatibilidadesLineas;
-						delete from Incompatibilidades;
-						--Indicadores
-						--InformesLib
-						--InformesLibCategorias
-						delete from Inventarios;
-						--delete from Lectores
-						delete from LineasCompra;
-						delete from LogMovimientosStocks;
-						delete from Lotes;
-						delete from Maquinas;
-						delete from Medicaciones;
-						delete from MedicacionesIngredientes;
-						--Medidores
-						--Modulos
-						--ModulosAscendentes
-						--ModulosIncompatibilidades
-						delete from MultiDosificaciones;
-						delete from NetAlarmas;
-						--NetAlarmasRespuestas
-						--NetAlarmasTipos
-						--NetAlarmasTiposRespuestas
-						--OpcConfig
-						--Opciones
-						--OperAcciones
-						--OperCabPlantillas
-						--OperMotores
-						--OperMotoresModulos
-						--OperPlantillas
-						delete from Ordenes;
-						delete from OrdenesRelacion;
-						--Origenes
-						--Paises
-						--Pistolas
-	
-						update Ubicaciones set Producto =null;
-						update OperPlantillas set IdProducto =null;
-						delete from Productos;
-						delete from ProductosGruposIncompatibilidades;
-						delete from Proveedores;
-						--Provincias
-						--Puntos
-						delete from PuntosDescarga;
-						delete from Regularizaciones;
-						delete from Resultados;
-						delete from SalidasLiniasMedicaciones;
-						delete from SalidasLinias;
-						delete from SalidasLiniasMuestras;
-						delete from SalidasLiniasLote;
-						delete from Salidas;
-						delete from SalidasViajes;
-						delete from StocksReserva;
-						--Sesiones
-						--SesionesModulo
-						--SesionesSeccion
-						delete from StatusDisks;
-						delete from Stocks;
-						--Tags
-						delete from Tarifas;
-						delete from Tarjetas;
-						--TiposIva
-						--Ubicaciones
-						--UbicacionesAsociadas
-						--UbisMedsAfino
-						--Unidades
-						--Usuarios
-						delete from UsuariosLogs;
-						--UsuariosRoles
-						--UsuariosRolesInformes
-						--UsuariosRolesModulos
-						delete from Valores;
-						delete from Variables;
-						delete from Vehiculos;
-
-						delete from LotesMezclados ;
-						delete from OrdenesDatosExtra ;
-						delete from FormulasDatosExtra ;
-
-						delete from LineaVentaLineaSalida ;
-						delete from VentasLiniasMedicaciones ;
-						delete from VentasLinias;
-						delete from Ventas;
-		
-						delete from versiondatosextra;
-						delete from Versiones;
-						delete from VersionTPrevisto;
-	
-
-						delete from RecetasLineas ;
-						delete from Recetas;
-						delete from Veterinarios ;
-		
-						--update modulos set idPlantillaBase = null, idPlantillaLimpieza =null;
-						--delete from OperPlantillas ;
-						--delete from OperCabPlantillas ;
-
-
-						--update tags set idLecturaTag = null
-						delete from TagsLecturas 
-						--delete from Pistolas ;
-						--Dejamos los contadores a cero...
-						--exec sp_MSforeachtable @command1 = 'DBCC CHECKIDENT(''?'', RESEED, 0)';
-						EXEC @return_value = [dbo].[spReseedUserTables] @password = @password
-
-						--Activamos los constaints
-						EXEC sp_msforeachtable ""ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"";
-					END
-					ELSE
-					BEGIN
-						SET @return_value = 1
-						PRINT 'Incorrect password'
-						SELECT 'Incorrect password';
-					END		
-
-					return @return_value
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[LimpiezaBuffers] 
-					-- Add the parameters for the stored procedure here
-					@fecha datetime
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					declare @fechalimite datetime
-					set @fechalimite = DATEADD (week, -4, getdate());
-
-
-
-					WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferConsumidos
-				where Tratado=1 and FechaTratado < @fecha 
-				)
-				DELETE FROM CTE;
-
-					WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferConsumidos
-				where FechaRecibido  < @fechalimite
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferProducidos
-				where Tratado=1 and FechaTratado < @fecha
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferProducidos
-				where  FechaRecibido  < @fechalimite
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPCabOrdenes
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPClienteDomicilioPuntoDescarga
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPClientes
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPClientesDomicilios
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPComponentes
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPEntradasLineasLote as bell
-				where bell.Tratado=1 and (bell.FTratado < @fecha or bell.FechaInsercion is null or (bell.FTratado is null and bell.FechaInsercion < @fechalimite))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPEntradasLineas as bel
-				where bel.Tratado=1 and (bel.FTratado < @fecha or bel.FechaInsercion is null or (bel.FTratado is null and bel.FechaInsercion < @fechalimite))
-				and not exists (select top 1 id from BufferERPEntradasLineasLote as bellot where bellot.IdLineaEntrada = bel.id)
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 be.*
-				FROM BufferERPEntradas as be
-				where be.Tratado=1 and (be.FTratado < @fecha or be.FechaInsercion is null or (be.FTratado is null and be.FechaInsercion < @fechalimite  ))
-				and not exists (select top 1 id from BufferERPEntradasLineas as bel where bel.idBufferEntrada = be.id)
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPFormulaProductosFinales
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPFormulas
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPLinOrdenes
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPConsumidos
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPConsumidos
-				where  FechaInicio < @fechalimite 
-				)
-				DELETE FROM CTE;
-
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPProducidos
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPProducidos
-				where FechaOrden  < @fechalimite 
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPProductos
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPProveedores
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPSalidasLinMedicamentos
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPSalidas
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-				WITH CTE AS
-				(
-				select * from buffererpsalidasliniaslote
-				where exists (SELECT TOP 10000 *
-								FROM BufferERPSalidasLinias
-								where id = idLineaSalida 
-								  and (Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  )))
-							)
-				)
-				DELETE FROM CTE;
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPSalidasLinias
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-				--Esborrem viatges
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPSalidasViajes
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				AND id NOT IN (SELECT DISTINCT bs.Id FROM BufferERPSalidasViajes bs, BufferERPSalidasLinias bl WHERE bl.idviajes = bs.id)
-				)
-				DELETE FROM CTE;
-
-
-
-
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPStocks
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM BufferERPVersiones
-				where Tratado=1 and (FTratado < @fecha or FechaInsercion is null or (FTratado is null and FechaInsercion < @fechalimite  ))
-				)
-				DELETE FROM CTE;
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM Eventos
-				where Fecha <  DateAdd(day, -5,  getdate())
-				)
-				DELETE FROM CTE;
-
-
-
-				WITH CTE AS
-				(
-				SELECT TOP 10000 *
-				FROM TagsLecturas 
-				where Tratado=1 and FTratado < @fecha AND id NOT IN (SELECT idLecturaTag FROM Tags)
-				)
-				DELETE FROM CTE;
-
-
-				update Stocks set idEntradasLineas = null , idSalidasLineas =null where Fecha < @fecha and Cantidad =0 and Estado =3;
-
-				delete from StocksReserva where Activo =0;
-
-				delete from Stocks where id in (
-				select S.id from stocks as S
-				left outer join StocksReserva as R on S.id = R.idStock 
-				where R.id is null 
-					and S.Fecha < @fecha 
-					and S.cantidad =0 
-					and (S.Estado =3 or S.Estado=2)
-					and S.idEntradasLineas is null 
-					and S.idSalidasLineas is null);
-
-
-				delete from UsuariosLogs where Login < @fecha;
-
-				delete from StatusDisks where Fecha  < @fecha;
-
-					/*
-				declare @dbname as nvarchar(30) =  DB_NAME();
-				DBCC SHRINKDATABASE(@dbname);
-				*/
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[ListaAlarmasConsumoMotores] 
-					-- Add the parameters for the stored procedure here
-					@TipoRango nvarchar(50)
-					, @FechaInicio datetime 
-					, @FechaFin datetime
-				AS
-				BEGIN
-	
-					SET NOCOUNT ON;
-
-					if @TipoRango <> 'Personalizada' 
-					begin 
-						set @FechaFin = getdate();
-						set @FechaInicio  = dbo.RangoFechaInicio(@TipoRango );
-					end
-
-					select *
-					from ListaAlarmas
-					where MotorId>0 and FechaError >=@FechaInicio and FechaError <=@FechaFin 
- 
-
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasLineasExtended]
-				AS
-				WITH CTE AS(
-					SELECT SL.id
-					  , SL.idSalidas
-					  , SL.idviajes
-					  , SL.idorden
-					  , SL.idAlbaran 
-						, Alb.Serie AS AlbaranSerie
-							, SerieAlbaran.Nombre AS AlbaranSerieNombre
-						, Alb.Numero AS AlbaranNumero
-						, Alb.Fecha AS AlbaranFecha
-					  , SL.idProducto
-						, P.Nombre AS ProductoNombre
-					  , SL.idFormato
-						, Form.Nombre AS FormatoNombre
-						, Form.Descripcion AS FormatoDescripcion
-					  , SL.idEnvase
-						, Enva.Nombre AS EnvaseNombre
-					  , SL.idUnidad
-						, Uni.Nombre AS UnidadTexto
-					  , SL.idDomicilio
-						  , Domi.Cliente AS DomicilioIdCliente
-							, Cli.Nombre AS DomicilioClienteNombre
-						  , Domi.Nombre AS DomicilioNombre
-						  , Domi.Referencia AS DomicilioReferencia
-						  , Domi.Direccion AS DomicilioDireccion
-						  , Domi.Poblacion AS DomicilioPoblacion
-						  , Domi.Telefono AS DomicilioTelefono
-						  , Domi.CodigoPostal DomicilioCodigoPostal
-						  , Domi.Provincia AS DomicilioProvincia
-						  , Provincias.Nombre AS DomicilioProvinciaNombre
-						  , Domi.Pais AS DomicilioPais
-								, Pais.Nombre AS DomicilioPaisNombre
-						  , Domi.Inhabilitado
-							, dbo.GetTextoParametro('Domicilio', 'Inhabilitado', Domi.Inhabilitado) AS DomicilioInhabilitadoStr
-						  , Domi.Descripcion AS DomicilioDescripcion
-						  , Domi.Simogan AS DomicilioSIMOGAN
-						  , Domi.REGA AS DomicilioREGA
-						  , Es.Nombre AS DomicilioEspecie
-					  , SL.TipoOrigen
-					  , SL.Origen1
-						, UbiOrig1.Nombre AS Origen1Nombre
-					  , SL.Origen2
-						, UbiOrig2.Nombre AS Origen2Nombre
-					  , SL.Origen3
-						, UbiOrig3.Nombre AS Origen3Nombre
-					  , SL.Origen4
-						, UbiOrig4.Nombre AS Origen4Nombre
-					  , STUFF(
-							ISNULL(', ' + UbiOrig1.Nombre, '') + 
-							ISNULL(', ' + UbiOrig2.Nombre, '') + 
-							ISNULL(', ' + UbiOrig3.Nombre, '') + 
-							ISNULL(', ' + UbiOrig4.Nombre, ''),
-							1, 2, '') AS OrigenesStr  -- con STUFF quitamos la coma y espacio iniciales
-					  , SL.FueraCajon
-					  , SL.Cajon1
-					  , SL.Cajon2
-					  , SL.Cajon3
-					  , SL.Cajon4
-					  , SL.Cajon5
-					  , SL.Cajon6
-					  , SL.Cajon7
-					  , SL.Cajon8
-					  , SL.Cajon9
-					  , SL.Cajon10
-					  , STUFF(
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Fueracajon', SL.FueraCajon), '') + 
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon1', SL.Cajon1), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon2', SL.Cajon2), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon3', SL.Cajon3), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon4', SL.Cajon4), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon5', SL.Cajon5), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon6', SL.Cajon6), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon7', SL.Cajon7), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon8', SL.Cajon8), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon9', SL.Cajon9), '') +
-							ISNULL(', ' + dbo.GetTextoParametro('SalidasLineas', 'Cajon10', SL.Cajon10), ''),
-							1, 2, '') AS CajonesStr  -- con STUFF quitamos la coma y espacio iniciales
-					  , SL.FechaFinCarga
-					  , SL.FechaInicioCarga
-					  , SL.Bultos
-					  , SL.Bruto
-					  , SL.Tara
-					  , (SL.Bruto - SL.Tara) AS NetoCalculado
-					  , SL.PesoNetoManual
-					  , COALESCE(PesoNetoManual, (SL.Bruto - SL.Tara)) AS NetoEfectivo  -- El peso neto entrado manualmente tiene prevalencia sobre el calculado
-					  , SL.Estado
-						, dbo.GetTextoParametro('SalidasLineas', 'Estado', SL.Estado) AS EstadoStr
-					  , SL.PrecioUnidad
-						, NULL AS IdMonedaPrecioUnidad
-						, NULL AS PrecioUnidadMonedaNombre
-					  , SL.Cantidad
-				--      , SL.LedControlDocumental
-				--      , SL.LedAnalisisLaboratorio
-				--      , SL.LedAutorizacion
-				--      , SL.LedCargaProducto
-				--      , SL.LedDevolucionTarjeta
-				--      , SL.TransitoActivo
-				--      , SL.idmodulo
-					  , SL.Fecha
-					  , SL.Precio
-						, NULL AS IdMonedaPrecio
-						, NULL AS PrecioMonedaNombre
-					  , SL.PrecioTransporte
-						, NULL AS IdMonedaPrecioTransporte
-						, NULL AS PrecioTransporteMonedaNombre
-				--      , SL.EstadoTarjeta
-					  , SL.Observaciones
-				--      , SL.Autorizada
-					  , SL.idBasculaPesajeBruto
-						, BascBruto.Nombre AS BasculaPesajeBrutoStr
-					  , SL.idBasculaPesajeNeto
-						, BascNeto.Nombre AS BasculaPesajeNetoStr
-					  , SL.CampoLibre1
-					  , SL.CampoLibre2
-				--      , SL.LedViajeAsignado
-					  , SL.idPuntoDescarga
-						, PD.Nombre AS PuntoDescargaStr
-						, PD.Descripcion AS PuntoDescargaDescripcion
-						,Ord.Id AS OrdenId
-						,Ord.Nombre AS OrdenNombre
-						, lot.Nombre AS PrimerLoteNombre
-
-						,STUFF((
-						  SELECT DISTINCT ' - ' + lot.Nombre
-						  FROM Resultados as Res
-						  LEFT OUTER JOIN Lotes AS Lot ON Lot.Id = Res.Lote AND Lot.Producto = Res.Producto
-						  WHERE Res.Orden = Ord.Id
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS TodosLotesNombre
-						,STUFF((
-							SELECT DISTINCT ' - ' + pd.Nombre
-							FROM SalidasLiniasPuntosDescarga AS slpd 
-							LEFT OUTER JOIN PuntosDescarga AS pd ON slpd.idPuntoDescarga = pd.id 
-							WHERE idLineaSalida = SL.id
-							FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS TodosPuntosDescarga
-			
-						  ,ISNULL(ROW_NUMBER() OVER(PARTITION BY SL.Id ORDER BY SL.Id ASC), -1) AS RowID 
-
-				  FROM dbo.SalidasLinias AS SL
-					LEFT OUTER JOIN SalidasAlbaranes AS Alb ON Alb.Id = SL.idAlbaran 
-						LEFT OUTER JOIN Series AS SerieAlbaran ON Alb.Serie = SerieAlbaran.Id
-					LEFT OUTER JOIN Productos AS P ON P.Id = SL.idProducto
-					LEFT OUTER JOIN Formatos AS Form ON Form.Id = SL.idFormato
-					LEFT OUTER JOIN Envases AS Enva ON Enva.Id = SL.idEnvase
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = SL.idUnidad
-					LEFT OUTER JOIN Domicilios AS Domi ON Domi.Id = SL.idDomicilio
-						LEFT OUTER JOIN Clientes AS Cli ON Cli.Id = Domi.Cliente
-						LEFT OUTER JOIN Paises AS Pais ON Pais.Id = Domi.Pais
-						LEFT OUTER JOIN Provincias AS Provincias ON Provincias.Id = Domi.Provincia
-					LEFT OUTER JOIN Especies AS Es ON Domi.Especie = Es.Id
-					LEFT OUTER JOIN Ubicaciones AS UbiOrig1 ON UbiOrig1.Id = SL.Origen1
-					LEFT OUTER JOIN Ubicaciones AS UbiOrig2 ON UbiOrig2.Id = SL.Origen2
-					LEFT OUTER JOIN Ubicaciones AS UbiOrig3 ON UbiOrig3.Id = SL.Origen3
-					LEFT OUTER JOIN Ubicaciones AS UbiOrig4 ON UbiOrig4.Id = SL.Origen4
-					LEFT OUTER JOIN Basculas AS BascBruto ON BascBruto.Id = SL.idBasculaPesajeBruto
-					LEFT OUTER JOIN Basculas AS BascNeto ON BascNeto.Id = SL.idBasculaPesajeNeto
-					LEFT OUTER JOIN PuntosDescarga AS PD ON PD.id = SL.idPuntoDescarga
-						LEFT OUTER JOIN Ordenes AS Ord ON Ord.LineaSalida = SL.id
-						LEFT OUTER JOIN Resultados AS Res ON res.Orden = Ord.id
-						LEFT OUTER JOIN Lotes AS lot ON lot.Id = res.Lote)
-
-
-						SELECT * FROM CTE WHERE RowID = 1
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[ListaClientesDeUnLote] 
-					-- Add the parameters for the stored procedure here
-					@idlote int
-				AS
-				BEGIN
-	
-					SET NOCOUNT ON;
-
-					select consulta.* , ext.*
-				from (
-				select 
-					ords.LineaSalida as IdLineaSalida
-					, res.lote as idLote
-					, sum(res.Cantidad ) as cantidad
-
-				from Resultados as res
-
-				inner join Ordenes as ords on ords.Id = res.Orden 
-
-
-				where ords.LineaSalida >0 and res.Lote = @idlote 
-
-				group by ords.LineaSalida , res.Lote ) as consulta
-
-
-				left outer join SalidasLineasExtended as ext on ext.id = consulta.IdLineaSalida 
-  
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[NuevoContador] 
-					-- Add the parameters for the stored procedure here
-					@contador int output
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					declare @num int;
-
-
-					SELECT @num= (Numero + 1)
-				FROM Compras as T
-				inner join Series as S on S.Estado =1
-				WHERE NOT EXISTS( 
-					SELECT 1 FROM Compras WHERE (Numero = T.Numero + 1) and Serie = T.Serie ) 
-				--AND Numero >= 1000
-				AND Numero >= S.ContadorCompras 
-				ORDER BY Numero;
-
-
-
-	
-	
-					--devolvemos el nuevo contador.
-
-
-					set @contador =@num;
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[OEEDesgloses]
-					@FechaInicio datetime
-					, @FechaFinal datetime
-					, @IntervalosSegs int
-					, @ListaModulos nvarchar(max)
-					, @ListaMedidores nvarchar(max)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-
-					declare @LModulos table (id nvarchar(10));
-					declare @LMedidores table (id nvarchar(10));
-
-					--Si no funciona el StringSplit ... comprobar compatibilidad de la base de datos sea mínimo a 13 (2016)
-
-					insert into @LModulos SELECT value FROM STRING_SPLIT(@ListaModulos, ',') WHERE RTRIM(value)<>'';
-					insert into @LMedidores SELECT value FROM STRING_SPLIT(@ListaMedidores, ',') WHERE RTRIM(value)<>''
-
-
-					if @ListaModulos='' and @ListaMedidores=''
-					begin
-						select result.intervalStartTime as IntervaloInicio
-							, result.intervalEndTime as IntervaloFinal
-							, result.eventDurationInIntervalSeconds as IntervaloDuracionSegs
-							, o.Id 
-							, o.Cantidad 
-							, o.MedidorId 
-							, o.DuracionStamp 
-							, dbo.CantidadSegunTiempo(o.Cantidad , result.intervalStartTime, result.intervalEndTime, o.Fecha , o.FechaFin )  as IntervaloCantidad
-							--, (o.Cantidad /DuracionStamp ) * result.eventDurationInIntervalSeconds as IntervaloCantidad
-							--, o.* 
-						from (
-							select  D.id, D.Fecha , D.DuracionStamp , dateadd(second, D.DuracionStamp , D.Fecha) as FechaFin, D.Cantidad , D.MedidorId , M.Modulo 
-								from Desgloses as D
-								left outer join Medidores as M on M.Id=D.MedidorId  
-								where D.Fecha >= @FechaInicio 
-									and dateadd(second, DuracionStamp , D.Fecha) <= @FechaFinal 
-							union
-							select  D.id, D.Fecha , D.DuracionStamp , dateadd(second, D.DuracionStamp , D.Fecha) as FechaFin, D.Cantidad , D.MedidorId , M.Modulo 
-								from Desgloses  as D
-								left outer join Medidores as M on M.Id=D.MedidorId  
-								where D.Fecha < @FechaInicio 
-									and dateadd(second, D.DuracionStamp , D.Fecha) > @FechaInicio 
-							union
-							select  D.id, D.Fecha , D.DuracionStamp , dateadd(second, D.DuracionStamp , D.Fecha) as FechaFin, D.Cantidad , D.MedidorId , M.Modulo 
-								from Desgloses  as D
-								left outer join Medidores as M on M.Id=D.MedidorId  
-								where D.Fecha < @FechaFinal 
-									and dateadd(second, D.DuracionStamp , D.Fecha) > @FechaFinal )  as o
-
-
-						cross apply dbo.TVF_TimeRange_Split_To_GridSeconds(o.Fecha  , DATEDIFF (second, o.Fecha, o.FechaFin  ),@IntervalosSegs) result
-						where o.FechaFin  >= @FechaInicio and o.Fecha <= @FechaFinal 
-						order by o.id 
-
-					end
-					else
-					begin
-						select result.intervalStartTime as IntervaloInicio
-							, result.intervalEndTime as IntervaloFinal
-							, result.eventDurationInIntervalSeconds as IntervaloDuracionSegs
-							, o.Id 
-							, o.Cantidad 
-							, o.MedidorId 
-							, o.DuracionStamp 
-							, (o.Cantidad /DuracionStamp ) * result.eventDurationInIntervalSeconds as IntervaloCantidad
-							--, o.* 
-						from (
-							select  D.id, D.Fecha , D.DuracionStamp , dateadd(second, D.DuracionStamp , D.Fecha) as FechaFin, D.Cantidad , D.MedidorId , M.Modulo 
-								from Desgloses as D
-								left outer join Medidores as M on M.Id=D.MedidorId  
-								where D.Fecha >= @FechaInicio 
-									and dateadd(second, DuracionStamp , D.Fecha) <= @FechaFinal 
-							union
-							select  D.id, D.Fecha , D.DuracionStamp , dateadd(second, D.DuracionStamp , D.Fecha) as FechaFin, D.Cantidad , D.MedidorId , M.Modulo 
-								from Desgloses  as D
-								left outer join Medidores as M on M.Id=D.MedidorId  
-								where D.Fecha < @FechaInicio 
-									and dateadd(second, D.DuracionStamp , D.Fecha) > @FechaInicio 
-							union
-							select  D.id, D.Fecha , D.DuracionStamp , dateadd(second, D.DuracionStamp , D.Fecha) as FechaFin, D.Cantidad , D.MedidorId , M.Modulo 
-								from Desgloses  as D
-								left outer join Medidores as M on M.Id=D.MedidorId  
-								where D.Fecha < @FechaFinal 
-									and dateadd(second, D.DuracionStamp , D.Fecha) > @FechaFinal )  as o
-
-
-						cross apply dbo.TVF_TimeRange_Split_To_GridSeconds(o.Fecha  , DATEDIFF (second, o.Fecha, o.FechaFin  ),@IntervalosSegs) result
-						where o.FechaFin  >= @FechaInicio and o.Fecha <= @FechaFinal and (o.Modulo  in (select id from @LModulos  ) or o.MedidorId  in (select id from @LMedidores ))
-						order by o.id 
-						end
-				end
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[OEEEstadosFechaCompleto]
-					@FechaInicio datetime
-					, @FechaFinal datetime
-					, @IntervalosSegs int
-					, @ListaModulos nvarchar(max)
-					, @ListaMedidores nvarchar(max)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					--SET NOCOUNT ON;
-					--SET FMTONLY OFF
-
-					if (1=0)
-					begin
-						declare @OEEEstadosFechaCompletoResult table(
-						NombreModuloMedidor nvarchar(255)
-						, ModuloNombre nvarchar(255)
-						, MedidorNombre nvarchar(255)
-						, OrdenNombre nvarchar(255)
-						, ProductoFinal nvarchar(255)
-						, AlarmaDescripcion nvarchar(255)
-						, AlarmaFechaInicio datetime
-						, EstadoNombre nvarchar(255)
-						, IntervaloInicio datetime
-						, IntervaloFinal  datetime
-						, IntervaloDuracionSegs float
-						, id int
-						, IdModulo int
-						, IdMedidor int
-						, Estado int
-						, FInicio datetime
-						, FFinal datetime
-						, VentanaSegs int
-						, OperarioId int
-						, IdTurno int
-						, IdAlarmaActual int
-						, IdOrdenActual int
-						);
-						select * from @OEEEstadosFechaCompletoResult;
-					end
-
-
-					CREATE TABLE #tmpOeeEstadosCompleto(
-					IntervaloInicio datetime,
-					IntervaloFinal datetime,
-					IntervaloDuracionSegs float,
-					[id] [int] NULL,
-					[IdModulo] [int] NULL,
-					[IdMedidor] [int] NULL,
-					[Estado] [int] NULL,
-					[FInicio] [datetime] NULL,
-					[FFinal] [datetime] NULL,
-					[VentanaSegs] [int] NULL,
-					[OperarioId] [int] NULL,
-					[IdTurno] [int] NULL,
-					[IdAlarmaActual] [int] NULL,
-					[IdOrdenActual] [int] NULL
-					)
-   
-					insert into #tmpOeeEstadosCompleto 
-					EXEC	[dbo].[OEEEStadosFechaIntervalos]
-						@FechaInicio = @FechaInicio,
-						@FechaFinal = @FechaFinal,
-						@IntervalosSegs = @IntervalosSegs,
-						@ListaModulos = @ListaModulos,
-						@ListaMedidores = @ListaMedidores
-
-
-
-					Select 
-						isnull(M.Nombre, Meds.Nombre ) as NombreModuloMedidor
-						, M.Nombre as ModuloNombre
-						, Meds.Nombre as MedidorNombre
-						, ords.Nombre as OrdenNombre
-						, prod.Nombre as ProductoFinal
-						, alt.TextoError as AlarmaDescripcion
-						, al.FechaError as AlarmaFechaInicio
-						, oeetipo.Nombre as EstadoNombre
-						, base.IntervaloInicio 
-						, base.IntervaloFinal 
-						, base.IntervaloDuracionSegs 
-						, base.id 
-						, base.IdModulo 
-						, base.IdMedidor 
-						, base.Estado 
-						, base.FInicio 
-						, base.FFinal 
-						, base.VentanaSegs 
-						, base.OperarioId 
-						, base.IdTurno 
-						, base.IdAlarmaActual 
-						, base.IdOrdenActual 
-					from #tmpOeeEstadosCompleto as base
-					left outer join Modulos as M on M.Id = base.IdModulo 
-					left outer join Medidores as Meds on Meds.Id = base.IdMedidor 
-					left outer join Ordenes as ords on ords.Id = base.IdOrdenActual 
-					left outer join Productos as prod on prod.Id = ords.ProductoDestino 
-					left outer join NetAlarmas as al on al.Id = base.IdAlarmaActual 
-					left outer join NetAlarmasTipos as alt on alt.Id = al.IdError 
-					left outer join OEEEstadosTipo as oeetipo on oeetipo.id = base.Estado 
-
-
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[OEEEStadosFechaIntervalos] 
-					-- Add the parameters for the stored procedure here
-					@FechaInicio datetime
-					, @FechaFinal datetime
-					, @IntervalosSegs int
-					, @ListaModulos nvarchar(max)
-					, @ListaMedidores nvarchar(max)
-				AS
-				BEGIN
-	
-					if @ListaModulos='' and @ListaMedidores=''
-					begin
-						select result.intervalStartTime as IntervaloInicio
-							, result.intervalEndTime as IntervaloFinal
-							, result.eventDurationInIntervalSeconds as IntervaloDuracionSegs
-							, o.* 
-						from OEEEstados as o
-						cross apply dbo.TVF_TimeRange_Split_To_GridSeconds(o.FInicio , DATEDIFF (second, o.FInicio, isnull(o.FFinal, @FechaFinal) ),@IntervalosSegs) result
-						where isnull(o.FFinal, getdate()) > @FechaInicio and o.FInicio < @FechaFinal
-						order by o.id 
-					end
-					else
-					begin
-						declare @LModulos table (id nvarchar(10));
-						declare @LMedidores table (id nvarchar(10));
-
-						--Si no funciona el StringSplit ... comprobar compatibilidad de la base de datos sea mínimo a 13 (2016)
-
-						insert into @LModulos SELECT value FROM STRING_SPLIT(@ListaModulos, ',') WHERE RTRIM(value)<>'';
-						insert into @LMedidores SELECT value FROM STRING_SPLIT(@ListaMedidores, ',') WHERE RTRIM(value)<>''
-
-						select result.intervalStartTime as IntervaloInicio
-							, result.intervalEndTime as IntervaloFinal
-							, result.eventDurationInIntervalSeconds as IntervaloDuracionSegs
-							, o.* 
-						from 
-						(
-							select id, IdModulo , IdMedidor , Estado 
-							, case when FInicio > @FechaInicio then FInicio else @FechaInicio end  as FInicio
-							, case when ISNULL ( FFinal , GETDATE()) < @FechaFinal  then ISNULL ( FFinal , GETDATE()) else @FechaFinal end as FFinal
-							, VentanaSegs , OperarioId , IdTurno , IdAlarmaActual , IdOrdenActual  
-								from OEEEstados
-								where FInicio < @FechaFinal 
-									and (FFinal > @FechaInicio or FFinal is null) 
-						 ) 
-						 as o
-						cross apply dbo.TVF_TimeRange_Split_To_GridSeconds(o.FInicio , DATEDIFF (second, o.FInicio, isnull(o.FFinal, @FechaFinal) ),@IntervalosSegs) result
-						where isnull(o.FFinal, getdate()) > @FechaInicio and o.FInicio < @FechaFinal and (o.IdModulo in (select id from @LModulos  ) or o.IdMedidor in (select id from @LMedidores ))
-						order by o.id 
-
-
-					end
-	
-
-
-
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[OEEGenerarDatosFalsos] 
-					-- Add the parameters for the stored procedure here
-					@Finicio datetime, 
-					@FFinal datetime,
-					@MinutosIntervalo int,
-					@Modulo int
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-					declare @EstadoActual int
-					declare @Fecha datetime
-					set @Fecha = @Finicio 
-					--set @EstadoActual = RAND(DATEPART(millisecond, getdate()))
-					set @EstadoActual = 6 --Fuera de horario
-
-
-
-					while @Fecha < @FFinal 
-					begin
-						declare @hora int
-						set @hora = DATEPART (hour, @Fecha)
-
-		
-						--Dentro del horario
-						set @EstadoActual = RAND() * 100;
-
-						select @EstadoActual = case @EstadoActual 
-							when 1 then 1
-							when 2 then 2
-							when 3 then 2
-							when 4 then 3
-							when 5 then 4
-							when 6 then 5
-							when 7 then 2
-							when 8 then 7
-							when 9 then 7
-							when 10 then 4
-							else 1
-						end 
-
-		
-
-						declare @myturno int;
-						set @myturno = dbo.VerTurnoId(@Fecha);
-
-						if (@myturno is null)
-						begin
-							set @EstadoActual = 6
-						end
-		
-
-
-						INSERT INTO [dbo].[OEEEstados]
-						   ([IdModulo], [Estado], [FInicio], [FFinal], [VentanaSegs], [OperarioId], [IdTurno])
-						 VALUES
-						   (@Modulo , @EstadoActual , @Fecha , DATEADD(minute, @MinutosIntervalo, @Fecha), @MinutosIntervalo *60, 1, @myturno);
-
-		
-
-						set @Fecha = DATEADD(minute, @MinutosIntervalo, @Fecha)
-					end
-
-
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[OrdenesACabOrdenes] 
-				AS
-				BEGIN
-					SET NOCOUNT ON;
-					update ordenes set IdCab=null;
-					delete from cabordenes;
-
-					declare @id as int;
-					declare @nombre as nvarchar(250)
-					declare @myfecha as datetime;
-					declare @ProductoDestino as int;
-					declare @LoteDestino as int;
-					declare @formula as int;
-					declare @Modulo as int;
-					declare @ultimaId as int;
-					declare @relacionada as int;
-					declare @idCab as int;
-
-
-
-					--miramos todas una a una, si alguna es dependiente, su base ha de existir antes, por lo tanto ya estará tratada.
-					DECLARE myorden CURSOR
-					FOR select id,  Nombre, 
-						Fecha as FechaCreacion, 
-						ProductoDestino as ProductoDestino, 
-						LoteDestino as LoteDestino, 
-						Formula as Formula, 
-						Modulo as Modulo,
-						OrdenRelacionada   from ordenes
-
-	
-					--Abrimos y leemos primer registro.
-					OPEN myorden;
-					FETCH NEXT FROM myorden into @id, @nombre, @myfecha, @ProductoDestino, @LoteDestino, @formula, @Modulo, @relacionada ;
-	
-					WHILE @@FETCH_STATUS = 0
-					BEGIN
-						if (@relacionada <>0)
-						begin
-							-- Es una relacionada, que por lo tanto ya tiene cabecera existente, hemos de buscarla y asignarla únicamente.
-							SET @idCab  =  (select IdCab  from Ordenes where Id= @relacionada) ;
-							update Ordenes set IdCab = @idCab where Id= @id;
-						end
-						else
-						begin 
-							--Es una orden que no existe cabecera, hemos de generarla.
-							insert into cabordenes ([Nombre]
-								,[FechaCreacion]
-								,[FechaInicio]
-								,[FechaFinal]
-								,[Tipo]
-								,[ProductoDestino]
-								,[UbicacionDestino]
-								,[LoteDestino]
-								,[Prioridad]
-								,[Formula]
-								,[Modulo]) 
-							values
-								(@nombre, @myfecha , null, null, 1, @ProductoDestino , null, @LoteDestino , 1, @formula , @Modulo );
-
-							SELECT @ultimaId  = SCOPE_IDENTITY();
-
-							update Ordenes set IdCab = @ultimaId where Id= @id;
-						 end
-
-
-
-
-						--Siguiente registro
-						FETCH NEXT FROM myorden into @id, @nombre, @myfecha, @ProductoDestino, @LoteDestino, @formula, @Modulo, @relacionada ;
-					END
-	
-					CLOSE myorden;
-					DEALLOCATE myorden;
-
-
-
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[P_ERPProductoUbicacion] 
-				AS 
-				BEGIN
-					SET NOCOUNT ON
-
-					DECLARE @MyTempTable TABLE
-					(
-						ItemId nvarchar(20),
-						InventLocation nvarchar(10),
-						wMSLocationId nvarchar(10)
-					)
-
-					SELECT ItemId, InventLocation, wMSLocationId FROM @MyTempTable;
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[P_ERPStockDisponibleCargaSilo] 
-				AS 
-				BEGIN
-					SET NOCOUNT ON
-
-					DECLARE @MyTempTable TABLE
-					(
-						ITEMID nvarchar(20),
-						ITEMNAME nvarchar(60),
-						INVENTSITEID nvarchar(10),
-						INVENTLOCATIONID nvarchar(10),
-						WMSLOCATIONID nvarchar(10),
-						INVENTBATCHID nvarchar(20),
-						CONFIGID nvarchar(25),
-						AvailableQty numeric(28, 12),
-						DATAAREAID nvarchar(4)
-					)
-
-					SELECT ITEMID, ITEMNAME, INVENTSITEID, INVENTLOCATIONID, WMSLOCATIONID,
-							INVENTBATCHID, CONFIGID, AvailableQty, DATAAREAID 
-					  FROM @MyTempTable;
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[Productividad] 
-					-- Add the parameters for the stored procedure here
-					@finicio as datetime,
-					@ffinal as datetime
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for procedure here
-					create table #temporal (Modulo nvarchar(50), Fecha date, Productividad decimal(18,3))
-
-					declare @nombreMod as nvarchar(50)
-					declare @idMod as int
-	
-
-					declare @diff as int
-					declare @i as int
-					declare @fecha as date
-					declare @Productividad as decimal(18,3)
-
-					DECLARE c CURSOR  
-					FOR SELECT Nombre , id FROM Modulos where TipoModulo >100 and TipoModulo <200
-					OPEN C  
-					FETCH NEXT FROM C into @nombreMod, @idMod;  
-					WHILE @@FETCH_STATUS = 0  
-					BEGIN 
-
-
-		
-
-
-						set @diff = DATEDIFF (day, @finicio, @ffinal)
-
-						if @diff <0 
-						begin
-							return 
-						end
-
-						set @i=@diff
-						set @fecha = @finicio 
-
-						while @i>0
-						begin
-							set @Productividad = isnull( dbo.ProductividadModuloDia (@idMod , @fecha),0)
-							insert into #temporal  values (@nombreMod , @fecha, @Productividad )
-							set @i = @i-1
-							set @fecha = dateadd(day, 1, @fecha)
-						end
-		
-						FETCH NEXT FROM C into @nombreMod, @idMod;  
-					END
-
-					CLOSE c;  
-					DEALLOCATE c;  
-
-					select * from #temporal 
-
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[Productividad7Dias] 
-					-- Add the parameters for the stored procedure here
-	
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					-- Insert statements for procedure here
-					create table #temporal (Modulo nvarchar(50), Fecha date, Productividad decimal(18,3))
-
-					declare @nombreMod as nvarchar(50)
-					declare @idMod as int
-					declare @finicio as date
-					declare @ffinal as date
-
-					declare @diff as int
-					declare @i as int
-					declare @fecha as date
-					declare @Productividad as decimal(18,3)
-
-					DECLARE c CURSOR  
-					FOR SELECT Nombre , id FROM Modulos where TipoModulo >100 and TipoModulo <200
-					OPEN C  
-					FETCH NEXT FROM C into @nombreMod, @idMod;  
-					WHILE @@FETCH_STATUS = 0  
-					BEGIN 
-
-
-						set @ffinal = dateadd(day, 1, getdate())
-						set @finicio = dateadd(day, -7, @ffinal)
-
-
-						set @diff = DATEDIFF (day, @finicio, @ffinal)
-
-						if @diff <0 
-						begin
-							return 
-						end
-
-						set @i=@diff
-						set @fecha = @finicio 
-
-						while @i>0
-						begin
-							set @Productividad = isnull( dbo.ProductividadModuloDia (@idMod , @fecha),0)
-							insert into #temporal  values (@nombreMod , @fecha, @Productividad )
-							set @i = @i-1
-							set @fecha = dateadd(day, 1, @fecha)
-						end
-		
-						FETCH NEXT FROM C into @nombreMod, @idMod;  
-					END
-
-					CLOSE c;  
-					DEALLOCATE c;  
-
-					select * from #temporal 
-
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[RangoConsumoKWMotores] 
-					-- Add the parameters for the stored procedure here
-					@TipoRango nvarchar(50)
-					, @FechaInicio datetime 
-					, @FechaFin datetime
-					, @NumMuestras int
-					, @ListaMotores nvarchar(max)
-					, @IpServidor as nvarchar(20)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					if @TipoRango <> 'Personalizada' 
-					begin 
-						set @FechaFin = getdate();
-						set @FechaInicio  = dbo.RangoFechaInicio(@TipoRango );
-					end
-
-
-
-					EXEC [dbo].[ConsumoKWMotores]
-						@FechaInicio = @FechaInicio ,
-						@FechaFin = @FechaFin ,
-						@NumMuestras = @NumMuestras ,
-						@IpServidor = @IpServidor ,
-						@ListaMotores = @ListaMotores
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[RangoConsumoKWMotoresSumas] 
-					-- Add the parameters for the stored procedure here
-					@TipoRango nvarchar(50)
-					, @FechaInicio datetime 
-					, @FechaFin datetime
-					, @NumMuestras int
-					, @ListaMotores nvarchar(max)
-					, @IpServidor as nvarchar(20)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					if @TipoRango <> 'Personalizada' 
-					begin 
-						set @FechaFin = getdate();
-						set @FechaInicio  = dbo.RangoFechaInicio(@TipoRango );
-					end
-
-
-
-					EXEC [dbo].[ConsumoKWMotores]
-						@FechaInicio = @FechaInicio ,
-						@FechaFin = @FechaFin ,
-						@NumMuestras = @NumMuestras ,
-						@IpServidor = @IpServidor ,
-						@ListaMotores = @ListaMotores,
-						@Sumado =1
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[RangoConsumoKWSecciones] 
-					-- Add the parameters for the stored procedure here
-					@TipoRango nvarchar(50)
-					, @FechaInicio datetime 
-					, @FechaFin datetime
-					, @NumMuestras int
-					, @ListaSecciones nvarchar(max)
-					, @IpServidor as nvarchar(20)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					if @TipoRango <> 'Personalizada' 
-					begin 
-						set @FechaFin = getdate();
-						set @FechaInicio  = dbo.RangoFechaInicio(@TipoRango );
-					end
-
-
-
-					EXEC [dbo].[ConsumoKWMotoresSecciones]
-						@FechaInicio = @FechaInicio ,
-						@FechaFin = @FechaFin ,
-						@NumMuestras = @NumMuestras ,
-						@IpServidor = @IpServidor ,
-						@ListaSecciones  = @ListaSecciones
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[RangoConsumoKWSeccionesSumas] 
-					-- Add the parameters for the stored procedure here
-					@TipoRango nvarchar(50)
-					, @FechaInicio datetime 
-					, @FechaFin datetime
-					, @NumMuestras int
-					, @ListaSecciones nvarchar(max)
-					, @IpServidor as nvarchar(20)
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					if @TipoRango <> 'Personalizada' 
-					begin 
-						set @FechaFin = getdate();
-						set @FechaInicio  = dbo.RangoFechaInicio(@TipoRango );
-					end
-
-
-
-					EXEC [dbo].[ConsumoKWMotoresSecciones]
-						@FechaInicio = @FechaInicio ,
-						@FechaFin = @FechaFin ,
-						@NumMuestras = @NumMuestras ,
-						@IpServidor = @IpServidor ,
-						@ListaSecciones  = @ListaSecciones,
-						@Sumado =1
-	
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[spReseedUserTables] 
-					@password nvarchar(20) = N''
-				AS
-				BEGIN
-					DECLARE @TableName sysname = N''
-					DECLARE @ColumnName sysname = N''
-					DECLARE @CurrentSeed bigint = 0
-					DECLARE @NewSeed bigint = 0
-					DECLARE @SQL nvarchar(4000) = N''
-
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					IF @password = '1_voltecsl'
-					BEGIN
-						-- find all non-system tables and load into a cursor
-						DECLARE IdentityTables CURSOR FAST_FORWARD
-						FOR
-						SELECT TableName = c.TABLE_SCHEMA + N'.' + t.TABLE_NAME
-						, c.COLUMN_NAME
-						FROM INFORMATION_SCHEMA.COLUMNS AS c
-						INNER JOIN INFORMATION_SCHEMA.TABLES AS t ON t.TABLE_NAME = c.TABLE_NAME
-						AND t.TABLE_SCHEMA = c.TABLE_SCHEMA
-						WHERE COLUMNPROPERTY(OBJECT_ID(c.TABLE_SCHEMA + '.' + c.TABLE_NAME), c.COLUMN_NAME, 'IsIdentity') = 1
-						AND t.TABLE_TYPE = 'Base Table'
-
-						OPEN IdentityTables
-
-						FETCH NEXT FROM IdentityTables INTO @TableName, @ColumnName
-						WHILE @@FETCH_STATUS = 0
-						BEGIN
-						-- leer el valor actual de IDENTITY de la tabla
-						SET @CurrentSeed = (SELECT IDENT_CURRENT(@TableName) AS IDENT_CURRENT)
-						--PRINT @CurrentSeed;
-						-- find the max value of the identity column in the table, use 1 if there are no rows
-						SET @SQL = N'SELECT @NewSeed_out = ISNULL(MAX([' + @ColumnName + ']), 0) FROM ' + '['+REPLACE(@tablename,'.','].[')+']'
-						--PRINT @SQL
-						EXECUTE sys.sp_executesql @SQL, N'@NewSeed_out bigint OUTPUT', @NewSeed_out = @NewSeed OUTPUT
-
-						IF (@CurrentSeed <> 1 AND @NewSeed >= 0) AND @CurrentSeed <> @NewSeed BEGIN
-							-- reseed the identity with the max value found in the previous step, SQL Server will automatically pick up at the next value
-							SET @SQL = N'DBCC CHECKIDENT(''' + @TableName + ''', RESEED, ' + CAST(@NewSeed AS varchar(25)) + ')' + ' -- Current: ' + CAST(@CurrentSeed AS varchar(25))
-							--PRINT @SQL
-							PRINT @TableName + ' : Current seed ' + CAST(@CurrentSeed AS varchar(25)) + ' ; New seed ' + CAST(@NewSeed AS varchar(25))
-							EXECUTE (@SQL)
-						END
-
-						FETCH NEXT FROM IdentityTables INTO @TableName, @ColumnName
-						END
-
-						DEALLOCATE IdentityTables
-					END
-					ELSE
-					BEGIN
-						PRINT 'Incorrect password'
-					END
-				END
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER PROCEDURE [dbo].[UpdateBufferOrdenes] 
-	
-				AS
-				BEGIN
-					-- SET NOCOUNT ON added to prevent extra result sets from
-					-- interfering with SELECT statements.
-					SET NOCOUNT ON;
-
-					DECLARE @Orden nvarchar(50)
-					, @Fecha date
-					, @Referencia nvarchar(50)
-					, @NombreProducto nvarchar(50)
-					, @Lote nvarchar(50)
-					, @FCaducidad date
-					, @Cantidad decimal(18,3)
-					, @NumCiclos int
-					; 
-
-					DECLARE @LinOrden nvarchar(50)
-					, @LinNumLinea int
-					, @LinRefProducto nvarchar(50)
-					, @LinLoteProducto nvarchar(50)
-					, @LinCaducidadLoteProducto date
-					, @LinCantidad numeric(18,3)
-					, @LinTipo int
-					, @LinCantidadTotal numeric(18,3)
-					; 
-	
-					DECLARE filas CURSOR FOR   
-						SELECT Nombre , Fecha, RefProducto, NombreProducto, NombreLoteProducto , FCaducidadLoteProducto ,
-							Cantidad , NumCiclos
-						FROM BufferERPCabOrdenes  
-						WHERE Tratado=0
-						ORDER BY Fecha ;  
-  
-					OPEN filas  
-  
-					FETCH NEXT FROM filas   
-						INTO @Orden, @Fecha, @Referencia, @NombreProducto, @Lote, @FCaducidad, @Cantidad, @NumCiclos ;
-
-
-  
-					WHILE @@FETCH_STATUS = 0  
-					BEGIN  
-						BEGIN TRY 
-
-							SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
-							BEGIN TRANSACTION;
-								DECLARE @ESTADO AS BIT=0;
-
-								--Comprobacion de valores...
-								if @Orden is null or @orden=''
-								begin
-									set @Estado=1;
-									update BufferERPCabOrdenes set Tratado=1, Errores='Campo de Nombre vacío' where Nombre  = @Orden  ;
-								end
-
-								if @Fecha is null 
-								begin
-									set @Fecha = getdate();
-								end
-
-								if @Referencia is null or @Referencia=''
-								begin
-									set @Estado=1;
-									update BufferERPCabOrdenes set Tratado=1, Errores='Campo de referencia vacío' where Nombre  = @Orden  ;
-								end
-
-								if @NombreProducto is null or @NombreProducto=''
-								begin
-									--Si existe la referencia no hay problema, sino, no podemos crear el producto final...
-									declare @tmpProd int = (select count(*) from Productos where Referencia =@Referencia )
-									if @tmpProd=0
-									begin
-									set @Estado=1;
-									update BufferERPCabOrdenes set Tratado=1, Errores='Campo de Nombre producto vacío' where Nombre  = @Orden  ;
-									end
-								end
-
-								if @Cantidad <=0 
-								begin
-									set @Estado=1;
-									update BufferERPCabOrdenes set Tratado=1, Errores='Cantidad debe ser mayor que 0' where Nombre  = @Orden  ;
-								end
-
-
-
-
-
-
-
-				
-
-
-								if @ESTADO =0
-								begin
-
-									--Guardamos los datos de la cabecera.
-
-
-									--Buscamos lineas
-									DECLARE lineas CURSOR FOR   
-										SELECT NombreOrden, NumLinea, RefProducto, LoteProducto , CaducidadLoteProducto , Cantidad , Tipo , CantidadTotal 
-										FROM BufferERPLinOrdenes  
-										WHERE NombreOrden =@Orden 
-										ORDER BY NumLinea  ;  
-  
-									OPEN lineas
-
-									FETCH NEXT FROM lineas   
-										INTO @LinOrden, @LinNumLinea, @LinRefProducto,
-										@LinLoteProducto, @LinCaducidadLoteProducto, 
-										@LinCantidad, @LinTipo, @LinCantidadTotal ;
-
-					 
-									WHILE @@FETCH_STATUS = 0  
-									BEGIN 
-					  
-						
-									--Comprobamos datos lineas, si algo mal, toda transacción fuera ...
-
-									--Entramos datos lineas
-
-									--Recogemos siguiente fila...
-									FETCH NEXT FROM lineas   
-											INTO @LinOrden, @LinNumLinea, @LinRefProducto,
-											@LinLoteProducto, @LinCaducidadLoteProducto, 
-											@LinCantidad, @LinTipo, @LinCantidadTotal ;
-									END
-									CLOSE lineas;  
-									DEALLOCATE lineas;
-									--Guardamos y fuera.
-									--Guardaremos con Importado=1, y desde integra se revisará para añadir medidores oportunos
-									--y que todo esté correcto, y entonces pondrá con Importado=2.
-
-									COMMIT TRANSACTION; 
-								END
-								
-						END TRY  
-						BEGIN CATCH 
-							print ERROR_MESSAGE();
-							IF(@@TRANCOUNT > 0)
-							ROLLBACK TRANSACTION
-							update BufferERPCabOrdenes set errores = ERROR_MESSAGE(), Tratado =1, FTratado =getdate() where Nombre =@Orden  ;
-						END CATCH 
-
-
-						FETCH NEXT FROM filas   
-						INTO @Orden, @Fecha, @Referencia, @NombreProducto, @Lote, @FCaducidad, @Cantidad, @NumCiclos ;
-					END   
-					CLOSE filas;  
-					DEALLOCATE filas;  
-
-				END
-				GO
-			");
-
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[CertificadosDesinfeccionExtended] AS
-					SELECT CD.id
-						  , CD.Serie
-						  , CD.Numero
-						  , CD.NRegistroCentro
-						  , CD.Responsable
-						  , CD.DNIResponsable
-						  , CD.NombreCentro
-						  , CD.fecha
-						  , CD.idCamion AS VehiculoId
-							, ISNULL(V.Matricula, CD.Matricula) AS VehiculoMatricula
-							, ISNULL(V.Remolque, CD.Remolque) AS VehiculoRemolque
-							, V.Referencia AS VehiculoReferencia
-					--      , CD.Matricula
-					--      , CD.Remolque
-						  , CD.idTransportista AS ChoferId
-							  , ISNULL(C.Nombre, CD.Conductor) AS ChoferNombre
-					--		, C.DNI AS ChoferDNI  -- para cuando se cree el campo
-					--      , CD.Conductor AS ChoferNombre
-						  , CD.Desinfectante AS DesinfectanteNombre
-						  , CD.Precinto
-						  , CD.FechaCertificado
-						  , CD.idOrden
-					  FROM CertificadoDesinfeccion AS CD
-						LEFT OUTER JOIN Vehiculos AS V ON V.Id = CD.idCamion
-						LEFT OUTER JOIN Choferes AS C ON C.Id = CD.idTransportista
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ComprasExtended]
-				AS
-				SELECT C.Id 
-					  , C.Serie AS idSerie
-						, S.Nombre AS SerieNombre
-						, S.Estado AS SerieEstado
-						, dbo.GetTextoParametro('Series', 'Estado', S.Estado) as SerieEstadoTexto
-					  , C.Numero
-					  , C.Proveedor AS idProveedor
-						  , Prove.Referencia AS ProveedorReferencia
-						  , Prove.Nombre AS ProveedorNombre
-						  , Prove.CIF AS ProveedorCIF
-						  , Prove.Direccion AS ProveedorDireccion
-						  , Prove.CodigoPostal AS ProveedorCodigoPostal
-						  , Prove.Poblacion AS ProveedorPoblacion
-						  , Prove.Telefono AS ProveedorTelefono
-						  , Prove.Provincia AS ProveedorProvincia
-							, Provi.Nombre AS ProveedorProvinciaNombre
-						  , Prove.Abreviado AS ProveedorAbreviado
-						  , Prove.Pais AS ProveedorPais
-							, Pais.Nombre AS ProveedorPaisNombre
-						  , Prove.Inhabilitado AS ProveedorInhabilitado
-							, dbo.GetTextoParametro('Proveedores', 'Inhabilitado', Prove.Inhabilitado) AS ProveedorInhabilitadoTexto
-					  , C.Fecha
-					  , C.Estado
-						, dbo.GetTextoParametro('Compras', 'Estado', C.Estado) as EstadoTexto
-				--      , C.UltimaFecha
-					  , C.Importado
-					  , C.Departamento
-					  , C.Entrega AS FechaEntrega
-					  , C.Comentario
-					  , C.Impresa
-					  , C.Refrescado
-					  , C.Fin
-					  , C.Exportado
-					  , C.Referencia
-					  , C.idContrato
-					  , C.ReferenciaContrato
-				  FROM dbo.Compras AS C
-					  LEFT OUTER JOIN Series AS S ON S.Id = C.Serie
-					  LEFT OUTER JOIN dbo.Proveedores AS Prove ON Prove.Id = C.Proveedor 
-						LEFT OUTER JOIN Provincias AS Provi ON Provi.Id = Prove.Provincia AND Provi.Pais = Prove.Pais 
-						LEFT OUTER JOIN Paises AS Pais ON Pais.Id = Prove.Pais
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ComprasLineasExtended]
-				AS
-				SELECT LC.Id
-				--      , LC.Serie
-					  , LC.Compra AS idCompra
-					  , LC.Linea
-					  , LC.Producto AS idProducto
-						, P.Nombre AS ProductoNombre
-					  , LC.Cantidad
-					  , LC.Servida
-					  , LC.Estado
-						, dbo.GetTextoParametro('ComprasLineas', 'Estado', LC.Estado) AS EstadoStr
-					  , LC.Importado
-					  , LC.Departamento
-					  , LC.Lote AS idLote
-					  , LC.Bultos
-					  , LC.Envase AS idEnvase
-						, Enva.Nombre AS EnvaseNombre
-					  , LC.Unidad AS idUnidad
-						, Uni.Nombre AS UnidadTexto
-					  , LC.Contrato AS ContratoTextoLibre
-					  , LC.Comentario
-					  , LC.Exportado
-					  , LC.PrecioCompra
-				-- idMonedaCompra...
-					  , LC.IdContrato
-				-- Contrato...
-					  , LC.Fecha
-					  , LC.FechaInicio
-					  , LC.FechaFin
-				  FROM dbo.LineasCompra AS LC
-					LEFT OUTER JOIN Productos as P ON P.Id = LC.Producto
-					LEFT OUTER JOIN Envases AS Enva ON Enva.Id = LC.Envase
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = LC.Unidad
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ConsumidoOrden]
-				AS
- 
-				SELECT Res.Id
-					  , Res.Orden AS IdOrden
-					  , Res.Cantidad
-					  , Res.Lote
-						, L.Nombre AS LoteNombre
-						, L.Referencia AS LoteReferencia
-					  , Res.Producto
-						, P.Nombre AS ProductoNombre
-						, P.PartidaArancelariaCompras 
-						, P.PartidaArancelariaFabricacion 
-					  , Res.Unidad
-						, Uni.Nombre AS UnidadNombre
-				  FROM .dbo.Resultados AS Res
-					LEFT OUTER JOIN Lotes AS L ON L.Id = Res.Lote
-					LEFT OUTER JOIN Productos AS P ON P.Id = Res.Producto
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = Res.Unidad
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DashOrdenes]
-				AS
-
-				select 
-				O.Id as IdOrden
-				, S.Nombre as Serie
-				, M.Nombre as Modulo
-				, O.Nombre
-				, CO.Id as IdCabecera 
-				, CO.Nombre as NombreCabecera
-				, isnull(P.Nombre,'') as Producto
-				, isnull(L.Nombre, '') as Lote
-				--, O.Fecha as Fecha
-				, cast(O.Fecha  as date)  as Fecha
-				, O.Cantidad as Cantidad
-				, O.NumeroCiclos as Ciclos
-				, O.Cantidad * O.NumeroCiclos as CantidadTotal
-				, round((select isnull(sum(cantidad),0) from Resultados as R where R.Orden = O.Id ),3) as CantidadReal
-				, round((select isnull(sum(KwhEfectivo),0) from Resultados as R where R.Orden = O.Id ),3) as KwhEfectivo
-				, round((select isnull(sum(KWhTotal),0) from Resultados as R where R.Orden = O.Id ),3) as KWhTotal
-				, isnull(F.Nombre ,'') as Formula
-				, case 
-					when DATEPART(HOUR, FechaInicio )<14 then 'Mañana'
-					else 'Tarde'
-				  end as Turno
-
-				,  STUFF((
-						  SELECT ',' + U.Nombre
-						  from Dosificaciones  as D 
-							INNER JOIN Ubicaciones AS U ON U.Id = D.Ubicacion 
-							where D.Orden = O.Id
-							order by D.PosicionDosificacion desc
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as Origenes
-
-				,  STUFF((
-						  SELECT ',' + U.Nombre
-						  from Desgloses   as D 
-							INNER JOIN Ubicaciones AS U ON U.Id = D.Ubicacion 
-							where D.Orden = O.Id
-							order by D.Id  desc
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as Destinos
-
-
-				, case O.Estado 
-					when 0 then 'Pendiente'
-					when 1 then 'Procesando'
-					when 2 then 'Retenida'
-					when 3 then 'Iniciando'
-					when 4 then 'Eliminada'
-					when 5 then 'Detenida'
-					when 6 then 'Finalizada'
-					when 7 then 'Interrumpida'
-					when 8 then 'Forzada'
-					else 'Desconocido'
-					end as Estado
-		
-				, cast(O.Inicio as time)  as Inicio
-				, cast(O.Fin as time)  as Fin  
-				, Case O.Modificada
-					when 1 then 'Si'
-					when 0 then 'No'
-					end as Modificada
-
-				 from Ordenes as O
-				 inner join CabOrdenes as CO on O.IdCab = CO.id 
-				 left outer join Series as S on S.Id = O.Serie 
-				 left outer join Productos as P on O.ProductoDestino  = P.Id 
-				 left outer join Modulos as M on M.Id = O.Modulo 
-				 left outer join Lotes as L on O.LoteDestino = L.Id 
-				 left outer join Formulas as F on O.Formula = F.Id  
- 
-				 where O.Estado <>4 and M.TipoModulo>100 and M.TipoModulo < 200
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DashVistaStocks] as
-				select 
-					P.Nombre as ProductoNombre
-					, P.Referencia as ProductoReferencia
-					, P.Referencia2 as ProductoReferencia2
-					, isnull(P.Densidad,0) as ProductoDensidad
-					, case P.Tipo 
-						when 0 then 'Materia Prima'
-						when 1 then 'SemiElaborado'
-						when 2 then 'Acabado'
-						else 'Indefinido' end as TipoProducto
-					, isnull(S.Cantidad,0) as CantidadStock
-					, isnull(U.Nombre,'') as UbicacionNombre
-
-				from Productos as P
-				left outer join Stocks as S on S.Producto = P.id 
-				left outer join Ubicaciones as U on U.id = S.Ubicacion
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DatosMuestraEntrada] AS
-				SELECT el.id AS idLineaEntrada, p.Nombre AS producto , p.Referencia AS prodRef , p.Referencia2 AS prodRef2 , l.Nombre AS lote , l.Fecha AS lotefecha , l.Caducidad AS lotecaducidad , pr.Nombre AS proveedor , 
-					pr.CIF AS provCif , pr.Referencia AS provRef , e.Referencia AS EntradaRef, e.ReferenciaCompra AS refcompra,
-					el.CantidadPedida , el.PesoBruto , el.NetoOrigen , el.FechaInicioRecepcion , el.FechaFinRecepcion , el.IdMuestra, 
-					l.id AS loteId, p.Id AS ProductoId, e.Numero, s.Nombre AS Serie
-
-				 from EntradasLineas AS el
-				inner join Entradas AS e on e.id = el.idEntradas 
-				inner join Productos AS p on p.Id = el.idProducto 
-				left outer join Proveedores AS pr on pr.Id = e.idProveedor 
-				left outer join Lotes AS l on l.Id = el.Lote 
-				left outer join Series AS s on s.Id = e.Serie
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DEBUG_ResultadosSinMovimientos]
-				AS
-
-				SELECT DISTINCT r.Orden AS idOrden, o.Nombre AS Orden, o.Inicio AS InicioOrden, r.Ciclo, u.Nombre AS Ubicacion, r.Producto AS idProducto, p.Nombre AS ProductoSinMovimientoStock, r.Inicio AS FechaResultado
-				FROM Ubicaciones u, Productos p, Resultados r, Ordenes o 
-				WHERE r.Ubicacion = u.id AND r.Producto = p.Id AND r.orden = o.id AND r.Producto NOT IN (SELECT DISTINCT l.IdProducto FROM LogMovimientosStocks l WHERE l.idOrden = r.Orden AND l.Ciclo = r.Ciclo)
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DesglosesDetalle]
-				AS
-
-				SELECT        
-				d.Cantidad, 
-				d.CantidadPrincipal, 
-				d.Orden, 
-				d.Id, 
-				l.Nombre AS LoteNombre, 
-				p.Nombre AS ProductoNombre, 
-				un.Nombre AS UnidadNombre, 
-				u.Nombre AS UbicacionNombre, 
-				d.Ciclo
-
-				FROM            dbo.Desgloses   AS d
-				LEFT OUTER JOIN dbo.Productos	AS p ON p.Id = d.Producto
-				LEFT OUTER JOIN dbo.Ubicaciones AS u ON u.Id = d.Ubicacion
-				LEFT OUTER JOIN dbo.Lotes		AS l ON l.Id = d.Lote
-				LEFT OUTER JOIN dbo.Unidades	AS un ON un.Id = d.Unidad
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DesglosesExtended]
-				AS
-				 SELECT Desg.Id
-					  , Desg.Serie
-					  , Desg.Orden
-						, O.Entrada AS IdEntrada
-						, O.LineaEntrada AS IdLineaEntrada
-					  , Desg.IdOld
-					  , Desg.Producto
-						, P.Nombre AS ProductoNombre
-						, P.Referencia AS ProductoReferencia
-						, P.Tipo as ProductoTipo
-					  , Desg.Lote
-						, L.Nombre AS LoteNombre
-						, L.Referencia AS LoteReferencia
-					  , Desg.Ubicacion
-						, U.Nombre AS UbicacionNombre
-						, U.Referencia AS UbicacionReferencia
-					  , Desg.Cantidad
-					  , Desg.Servida
-					  , Desg.Unidad
-						, Uni.Nombre AS UnidadNombre
-					  , Desg.CantidadPrincipal
-					  , Desg.TipoRegistro
-							, dbo.GetTextoParametro('Desgloses', 'TipoRegistro', Desg.TipoRegistro) AS TipoRegistroTexto
-					  , Desg.Finalizado
-					  , Desg.Importado
-					  , Desg.Exportado
-					  , Desg.Estado
-					  , Desg.Ciclo
-					  , Desg.Fecha
-					  , Desg.NumCorrecion
-					  , Desg.ProdDensidad
-					  , Desg.ProdNombre
-					  , Desg.ProdNombreLoteActual
-					  , Desg.Temperatura
-					  , Desg.Humedad
-					  , Desg.Ph
-					  , Desg.DuracionStamp
-					  , Desg.TiempoEfectivo
-					  , Desg.TiempoTotal
-					  , Desg.KWhEfectivo
-					  , Desg.KWhTotal
-					  , Desg.MedidorId
-						, Medid.Nombre AS MedidorNombre
-					  , Desg.IndicadorId
-					  , Desg.UsuarioId
-					  , Desg.MultidosiId
-					  , Desg.TotalCiclos
-					  , Desg.Camino
-					  , Desg.Secuencia
-					  , Desg.OperacionId
-					  , Desg.ValidacionId
-					  , Desg.TemperaturaId
-					  , Desg.PhId
-					  , Desg.FinalSecuencia
-					  , Desg.FinalCiclo
-					  , Desg.FinalMedidor
-					  , Desg.FinalOrden
-					  , Desg.CantidadManual
-					  , Desg.OrdenCancelada
-					  , Desg.BitAux1
-					  , Desg.BitAux2
-					  , Desg.Variable1
-					  , Desg.Variable2
-					  , Desg.Tipo
-						, dbo.GetTextoParametro('Desgloses', 'Tipo', Desg.Tipo) AS TipoStr
-					  , Desg.Editado
-					  , Modulo.Nombre AS ModuloNombre
-					  , Modulo.TipoModulo AS ModuloTipo
-				  FROM dbo.Desgloses AS Desg
-
-					LEFT OUTER JOIN Productos AS P ON P.Id = Desg.Producto 
-					LEFT OUTER JOIN Lotes AS L ON L.Id = Desg.Lote
-					LEFT OUTER JOIN Ubicaciones AS U ON U.Id = Desg.Ubicacion 
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = Desg.Unidad
-					LEFT OUTER JOIN Medidores AS Medid ON Medid.Id = Desg.MedidorId
-					LEFT OUTER JOIN Modulos AS Modulo ON Modulo.Id = Medid.Modulo
-					LEFT OUTER JOIN Ordenes AS O ON O.Id = Desg.Orden
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DomiciliosExtended]
-				AS
-					SELECT Domi.Id AS DomicilioId
-					  , Domi.Cliente AS DomicilioIdCliente
-					  , Domi.Nombre AS DomicilioNombre
-					  , Domi.Referencia AS DomicilioReferencia
-					  , Domi.Direccion AS DomicilioDireccion
-					  , Domi.Poblacion AS DomicilioPoblacion
-					  , Domi.Telefono AS DomicilioTelefono
-					  , Domi.CodigoPostal DomicilioCodigoPostal
-					  , Domi.Provincia AS DomicilioProvincia
-					  , Domi.Pais AS DomicilioPais
-							, Pais.Nombre AS DomicilioPaisNombre
-				--      , Domi.MarcaOficial
-				--      , Domi.Importado
-				--      , Domi.Refrescado
-				--      , Domi.Exportado
-				--      , Domi.Responsable
-				--      , Domi.Especie
-				--      , Domi.NumeroEspecies
-					  , Domi.Inhabilitado
-						, dbo.GetTextoParametro('Domicilio', 'Inhabilitado', Domi.Inhabilitado) AS DomicilioInhabilitadoStr
-					  , Domi.Descripcion AS DomicilioDescripcion
-					  , Domi.Simogan AS DomicilioSIMOGAN
-				  FROM dbo.Domicilios AS Domi
-					LEFT OUTER JOIN Paises AS Pais ON Pais.Id = Domi.Pais
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[DosificacionesDetalle]
-				AS
-
-				SELECT        
-				d.Orden, 
-				d.PosicionDosificacion, 
-				p.Nombre AS NombreProducto, 
-				m.Nombre AS NombreMedidor, 
-				u.Nombre AS NombreUbicacion, 
-				om.Nombre AS NombreMotor,
-				oa.Nombre AS NombreAccion,
-				d.Cantidad,
-				un.Nombre AS Unidad,
-				d.OperTiempo AS Tiempo,
-				d.Tipo AS TipoDosificacion, 
-				d.Id
-
-				FROM            dbo.Dosificaciones	AS d 
-				LEFT OUTER JOIN dbo.Productos		AS p ON p.Id = d.Producto and p.TipoPR=0
-				LEFT OUTER JOIN dbo.Medidores		AS m ON m.Id = d.Medidor 
-				LEFT OUTER JOIN dbo.Ubicaciones		AS u ON u.Id = d.Ubicacion and u.TipoPR=0
-				LEFT OUTER JOIN dbo.OperMotores		AS om ON om.Id = d.IdOperMotor
-				LEFT OUTER JOIN dbo.OperAcciones	AS oa ON oa.Id = d.IdOperAccion
-				LEFT OUTER JOIN dbo.Unidades		AS un ON un.Id = d.Unidad
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[EntradasExtended]
-				AS
-				 SELECT E.id
-					  , E.Serie
-						, S.Nombre AS SerieNombre
-						, S.Estado AS SerieEstado
-						, dbo.GetTextoParametro('Series', 'Estado', S.Estado) as SerieEstadoTexto
-					  , E.Numero
-					  , E.FechaCreacion
-					  , E.FechaPrevista
-					  , E.idVehiculo
-						, ISNULL(Vehic.Matricula, E.MatriculaCamion) AS VehiculoMatricula
-						, ISNULL(Vehic.Remolque, E.MatriculaRemolque) AS VehiculoRemolque
-						, Vehic.Referencia AS VehiculoReferencia
-					  , E.idChofer
-					  , ISNULL(Chof.Nombre, E.NombreConductor) AS ChoferNombre
-					  , Chof.CIF AS ChoferCIF
-					  , E.idProveedor
-						  , Prove.Referencia AS ProveedorReferencia
-						  , Prove.Nombre AS ProveedorNombre
-						  , Prove.CIF AS ProveedorCIF
-						  , Prove.Direccion AS ProveedorDireccion
-						  , Prove.CodigoPostal AS ProveedorCodigoPostal
-						  , Prove.Poblacion AS ProveedorPoblacion
-						  , Prove.Telefono AS ProveedorTelefono
-						  , Prove.Provincia AS ProveedorProvincia
-							, Provi.Nombre AS ProveedorProvinciaNombre
-						  , Prove.Abreviado AS ProveedorAbreviado
-						  , Prove.Pais AS ProveedorPais
-							, Pais.Nombre AS ProveedorPaisNombre
-						  , Prove.Inhabilitado AS ProveedorInhabilitado
-						  , Prove.AutorizacionDestinoFinal 
-							, dbo.GetTextoParametro('Proveedores', 'Inhabilitado', Prove.Inhabilitado) AS ProveedorInhabilitadoTexto
-					  , E.idTarjeta
-						, Tarj.Nombre AS TarjetaNombre
-					  , E.Estado
-						, dbo.GetTextoParametro('Entradas', 'Estado', E.Estado) AS EstadoTexto
-					  , E.Observaciones
-					  , E.idEmpresaTransporte
-						, EmpTrans.Nombre AS EmpresaTransporteNombre
-						, EmpTrans.Referencia AS EmpresaTransporteReferencia
-						, EmpTrans.CIF AS EmpresaTransporteCIF
-					  , E.Precio
-					  , E.FInicio AS FechaInicio
-					  , E.FFin AS FechaFin
-					  , E.Referencia
-					  , E.ReferenciaCompra
-					  , E.PreDesinfeccion
-					  , E.PostDesinfeccion
-					  , E.PreDesinfeccionOK
-					  , E.CoeficienteRendimiento 
-					  , E.DUA 
-					  , E.Factura 
-					  , E.Albaran 
-					  , E.AceptacionDestinoFinal 
-					  , (IIF(E.Predesinfeccion IS NOT NULL AND E.PreDesinfeccion=1
-								, dbo.GetTextoParametro('Entradas', 'PreDesinfeccionOK', ISNULL(E.PreDesinfeccionOK, 0))
-								, NULL)) AS PredesinfeccionOKTexto  -- Si se requiere, se muestra texto de si se ha hecho o no
-					  , E.PostDesinfeccionOK
-					  , (IIF(E.Postdesinfeccion IS NOT NULL AND E.PostDesinfeccion=1
-								, dbo.GetTextoParametro('Entradas', 'PostDesinfeccionOK', ISNULL(E.PostDesinfeccionOK, 0))
-								, NULL)) AS PostdesinfeccionOKTexto  -- Si se requiere, se muestra texto de si se ha hecho o no
-				  FROM dbo.Entradas AS E
-					  LEFT OUTER JOIN Series AS S ON S.Id = E.Serie
-					  LEFT OUTER JOIN dbo.Proveedores AS Prove ON Prove.Id = E.idProveedor 
-						LEFT OUTER JOIN Provincias AS Provi ON Provi.Id = Prove.Provincia AND Provi.Pais = Prove.Pais 
-						LEFT OUTER JOIN Paises AS Pais ON Pais.Id = Prove.Pais
-					  LEFT OUTER JOIN Tarjetas AS Tarj ON Tarj.Id = E.idTarjeta 
-					  LEFT OUTER JOIN Vehiculos AS Vehic ON Vehic.Id = E.IdVehiculo
-					  LEFT OUTER JOIN Choferes AS Chof ON Chof.Id = E.IdChofer
-					  LEFT OUTER JOIN EmpresasTransporte AS EmpTrans ON EmpTrans.Id = E.idEmpresaTransporte
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[EntradasLineasExtended]
-				AS
-				 SELECT EL.id
-					  , EL.idEntradas
-					  , EL.idProducto
-						, P.Nombre AS ProductoNombre
-					  , EL.CantidadPedida
-					  , EL.FechaInicioRecepcion
-					  , EL.FechaFinRecepcion
-					  , EL.PesoBruto
-					  , EL.Cajon1
-					  , EL.Cajon2
-					  , EL.Cajon3
-					  , EL.Cajon4
-					  , EL.Cajon5
-					  , EL.Cajon6
-					  , EL.Cajon7
-					  , EL.Cajon8
-					  , EL.Cajon9
-					  , EL.Cajon10
-				--      , EL.TransitoActivo
-				--      , EL.idBasculaPesajeBruto
-				--      , EL.idBasculaPesajeNeto
-				--      , EL.EntradaManualPesos
-					  , EL.Estado
-						, dbo.GetTextoParametro('EntradasLineas', 'Estado', EL.Estado) AS EstadoTexto
-					  , EL.FueraCajon
-				--      , EL.idProveedor
-				--      , EL.LedControlDocumental
-				--      , EL.LedAnalisisLaboratorio
-				--      , EL.LedAutorizacion
-				--      , EL.LedCargaProducto
-				--      , EL.LedDevolucionTarjeta
-					  , EL.Lote
-						, L.Nombre AS LoteNombre
-						, L.Referencia AS LoteReferencia
-						, L.Caducidad AS LoteCaducidad
-						, L.Estado AS LoteEstado
-						, dbo.GetTextoParametro('Lotes', 'Estado', L.Estado) AS LoteEstadoTexto
-					  , EL.Tara
-					  , (EL.PesoBruto - EL.Tara) AS Neto
-					  , EL.PesoNetoManual
-					  , COALESCE(PesoNetoManual, (EL.PesoBruto - EL.Tara)) AS PesoNeto  -- El peso neto entrado manualmente tiene prevalencia
-				--      , EL.RecogerPesoEnBascula
-					  , EL.Unidad
-						, Uni.Nombre AS UnidadTexto
-					  , EL.Destino1
-						, Ubi1.Nombre AS Destino1Nombre
-						, Ubi1.Referencia AS Destino1Referencia
-					  , EL.Destino2
-						, Ubi2.Nombre AS Destino2Nombre
-						, Ubi2.Referencia AS Destino2Referencia
-					  , EL.Destino3
-						, Ubi3.Nombre AS Destino3Nombre
-						, Ubi3.Referencia AS Destino3Referencia
-					  , EL.Destino4
-						, Ubi4.Nombre AS Destino4Nombre
-						, Ubi4.Referencia AS Destino4Referencia
-					  , EL.Formato
-						, Form.Nombre AS FormatoNombre
-						, Form.Descripcion AS FormatoDescripcion
-					  , EL.Envase
-						, Enva.Nombre AS EnvaseNombre
-					  , EL.Bultos
-					  , EL.Observaciones
-					  , EL.Precio
-					  , EL.PagarKgTeoricos
-					  , EL.CampoLibre1
-					  , EL.CampoLIbre2
-					  , EL.Fecha
-					  , EL.idModulo
-						, Modu.Nombre AS ModuloNombre
-				--      , EL.Autorizada
-				--      , EL.EstadoTarjeta
-					  , porig.Nombre AS ProveedorOrigenNombre
-				  FROM dbo.EntradasLineas AS EL
-					LEFT OUTER JOIN Productos AS P ON P.Id = EL.idProducto
-					LEFT OUTER JOIN Lotes AS L ON L.Id = EL.Lote
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = EL.Unidad
-					LEFT OUTER JOIN Ubicaciones AS Ubi1 ON Ubi1.Id = EL.Destino1 
-					LEFT OUTER JOIN Ubicaciones AS Ubi2 ON Ubi2.Id = EL.Destino2 
-					LEFT OUTER JOIN Ubicaciones AS Ubi3 ON Ubi3.Id = EL.Destino3 
-					LEFT OUTER JOIN Ubicaciones AS Ubi4 ON Ubi4.Id = EL.Destino4
-					LEFT OUTER JOIN Formatos AS Form ON Form.Id = EL.Formato 
-					LEFT OUTER JOIN Envases AS Enva ON Enva.Id = EL.Envase
-					LEFT OUTER JOIN Modulos AS Modu ON Modu.Id = EL.idModulo 
-					LEFT OUTER JOIN ProveedoresOrigenes AS POrig ON POrig.Id = EL.idOrigenProv
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[EntradasExtendedLineasEntradasExtended]
-				AS
-				 SELECT ee.FechaFin AS FechaEntrada,
-						ee.idProveedor,
-						ee.ProveedorNombre,
-						ee.ProveedorCIF,
-						ee.EmpresaTransporteNombre,
-						ee.EmpresaTransporteCIF,
-						ee.coeficienterendimiento,
-						ee.AutorizacionDestinoFinal,
-						ee.Factura,
-						ee.Albaran,
-						ee.DUA,
-						ee.AceptacionDestinoFinal,
-						ele.*
-				FROM EntradasExtended AS ee
-					LEFT OUTER JOIN EntradasLineasExtended AS ele ON ele.idEntradas = ee.id
-				WHERE EXISTS 
-					(SELECT 1 FROM EntradasLineas AS el WHERE el.idEntradas = ee.id and el.idProducto = ele.idProducto)
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[EntradasLineasResultadosNIRExtended]
-				AS
-				 SELECT ResulsNIR.id
-					  , ResulsNIR.idEntradasLineas
-					  , ResulsNIR.idControlesNir
-					  , ResulsNIR.Nombre
-					  , ResulsNIR.Descripcion
-					  , ResulsNIR.Resultado
-					  , NULL AS IdUnidad
-					  , NULL AS UnidadTexto
-					  , ResulsNIR.FechaResultado
-					  , ResulsNIR.ValorMinimo
-					  , ResulsNIR.ValorEsperado
-					  , ResulsNIR.ValorMaximo
-					  , ResulsNIR.ValorMinimoAlerta
-					  , ResulsNIR.ValorMaximoAlerta
-					  , ResulsNIR.ActivarMinimo
-					  , ResulsNIR.ActivarMaximo
-					  , ResulsNIR.ActivarMinimoAlerta
-					  , ResulsNIR.ActivarMaximoAlerta
-				--      , ResulsNIR.Estado
-				  FROM dbo.EntradasLineasResultadosNIR AS ResulsNIR
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[EtiquetaMuestraProduccion] as
-
-						select 
-					O.id as IdOrden,
-					O.Inicio ,
-					isnull(O.Fin, getdate()) as Fin,
-					P.Nombre as NombreProducto ,
-					L.Nombre as NombreLote ,
-					L.Id as IdLote,
-					(
-					select 
-						case count(*) 
-							when 0 then 0
-							else 1
-						end as Medicado
-					from
-						(select D.Id
-							from Dosificaciones as D 
-						left outer join Productos as P on P.Id = D.Producto
-						where P.Medicamento =1 and D.Orden =O.Id) as T) as Medicado
-		
-					from Ordenes as O
-					left outer join Productos as P on P.id = O.ProductoDestino 
-					left outer join Lotes as L on L.Id = O.LoteDestino
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[EtiquetaStock] as
-				select 
-					D.Nombre as Departamento
-					, L.Id
-					, isnull(L.Referencia,'') as Referencia 
-					, isnull(L.Nombre,'') as Nombre
-					, L.Fecha
-					, L.Inicio
-					, L.Fin
-					, format (L.Caducidad , 'dd/MM/yyyy') as Caducidad
-					, P.Id as IdProducto
-					, isnull(P.Referencia, '') as RefProducto
-					, isnull(P.Referencia2,'')  as Ref2Producto
-					, isnull(P.Nombre,'') as NombreProducto
-					, CASE WHEN (L.Caducidad IS NULL) 
-						   THEN 
-								concat('91', REPLACE(STR(L.id, 10), SPACE(1), '0'), '|250', L.Nombre , '|240' , P.Referencia , '|10', L.Referencia)
-						   ELSE 
-								concat('91', REPLACE(STR(L.id, 10), SPACE(1), '0'), '|250', L.Nombre , '|240' , P.Referencia , '|17', format (L.Caducidad , 'ddMMyy'), '|10', L.Referencia) 
-						   END AS CodigoBarras
-	
-				from Lotes as L
-
-				inner join Productos as P on L.Producto = P.Id 
-				inner join Departamentos as D on D.Activo = 1
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[LoteProveedorUnicoNOCantidad]
-				AS
-
-				WITH LoteProv AS(
-
-				SELECT 
-					l.id as IdLote
-					, isnull(pl.Nombre, p.Nombre  ) as Proveedor
-							,STUFF((
-						  SELECT distinct ' - ' + elo.LoteProveedor
-						  FROM EntradasLotes  as elo, EntradasLineas el2
-							WHERE elo.IdEntradasLineas = el2.id AND el2.Lote = l.Id
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS LotesProveedor
-						  ,e.FechaCreacion
-						  ,e.FFin
-						  ,ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY e.FFin DESC, e.FechaCreacion DESC) AS NUM_PROVEEDOR
-				FROM Lotes as l
-				LEFT OUTER JOIN Proveedores as pl on pl.Id = l.IdProveedor 
-				LEFT OUTER JOIN EntradasLineas as el on el.Lote = l.Id
-				LEFT OUTER JOIN Entradas as e on e.id = el.idEntradas  
-				LEFT OUTER JOIN Proveedores AS p ON p.Id = e.idProveedor
-				LEFT OUTER JOIN Ordenes as O on O.LineaEntrada = el.id 
-				LEFT OUTER JOIN Desgloses as D on D.Orden = O.Id 
-
-				GROUP BY l.Id , pl.Nombre, p.Nombre, e.FechaCreacion, e.FFin)
-
-				SELECT * FROM LoteProv WHERE NUM_PROVEEDOR = 1
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ExistenciasProductoLote]
-				AS
-				SELECT 
-
-						e.[Inventario] AS Inventario, 
-						p.Nombre AS ProductoNombre, 
-						e.[LoteNombre] AS LoteNombre, 
-						un.Nombre AS UnidadNombre, 
-						e.[Estado] AS Estado,
-						e.[Importado] AS Importado,
-						e.[Exportado] AS Exportado,
-						lp.Proveedor AS ProveedorNombre,
-						l.Caducidad AS LoteCaducidad,
-						p.Tipo AS ProductoTipo,
-						lp.[LotesProveedor] AS LotesProveedor,
-						SUM(e.Cantidad) AS Cantidad,
-						u.Nombre AS UbicacionNombre,
-						ISNULL(ROW_NUMBER() OVER(ORDER BY l.Caducidad ASC), -1) AS RowID
-
-					FROM Existencias AS e 
-					LEFT OUTER JOIN dbo.Lotes AS l ON l.Id = e.Lote
-					LEFT OUTER JOIN dbo.Productos AS p ON p.Id = e.Producto
-					LEFT OUTER JOIN dbo.Unidades AS un ON un.Id = e.Unidad
-					LEFT OUTER JOIN dbo.Ubicaciones AS u ON u.Id = e.Ubicacion
-					LEFT OUTER JOIN dbo.LoteProveedorUnicoNOCantidad AS lp ON l.Id = lp.IdLote
-
-					GROUP BY e.Inventario, p.Nombre, e.LoteNombre, un.Nombre, e.Estado, e.Lote, e.Importado, e.Exportado, lp.Proveedor, l.Caducidad, p.Tipo, lp.LotesProveedor, u.Nombre
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[InformeExpediciones] AS (
-					SELECT
-						cliente.CodigoPostal AS ClienteCodigoPostal,
-						cliente.Direccion AS ClienteDireccion,
-						cliente.Nombre AS ClienteNombre,
-						cliente.Poblacion AS ClientePoblacion,
-						cliente.Telefono AS ClienteTelefono,
-						domicilio.Nombre AS DomicilioNombre,
-						domicilio.Poblacion AS DomicilioPoblacion,
-						domicilio.Simogan AS DomicilioSimogan,
-						empresaTransporte.CIF AS EmpresasTransporteCif,
-						empresaTransporte.Nombre AS EmpresasTransporteNombre,
-						provinciaCliente.Nombre AS ProvinciaClienteNombre,
-						provinciaDomicilio.Nombre AS ProvinciaDomicilioNombre,
-						salida.FFin AS SalidaFechaFin,
-						salida.FInicio AS SalidaFechaInicio,
-						salida.Fecha AS SalidaFecha,
-						salidaViaje.Numero AS SalidaViajeNumero,
-						salidaViaje.Observaciones AS SalidaViajeObservaciones,
-						salidaViaje.id AS SalidaViajeId,
-						serie.Nombre AS SerieNombre,
-						vehiculo.Matricula AS VehiculoMatricula,
-						vehiculo.Remolque AS VehiculoRemolque
-					FROM
-						[SalidasViajes] salidaViaje
-					INNER JOIN [SalidasLinias] salidaLinea ON salidaViaje.id = salidaLinea.idviajes
-						INNER JOIN [Domicilios] domicilio ON salidaLinea.idDomicilio = domicilio.id
-							LEFT JOIN [Provincias] provinciaDomicilio ON domicilio.Provincia = provinciaDomicilio.Id
-						INNER JOIN [Salidas] salida ON salidaLinea.idSalidas = salida.id
-							INNER JOIN [Clientes] cliente ON salida.idCliente = cliente.Id
-								LEFT JOIN [Provincias] provinciaCliente ON cliente.Provincia = provinciaCliente.Id
-					INNER JOIN [Series] serie ON salidaViaje.idSerie = serie.Id
-					INNER JOIN [Vehiculos] vehiculo ON salidaViaje.idVehiculo = vehiculo.Id
-						INNER JOIN [EmpresasTransporte] empresaTransporte ON vehiculo.EmpresaTransporte = empresaTransporte.Id
-					GROUP BY
-						cliente.CodigoPostal,
-						cliente.Direccion,
-						cliente.Nombre,
-						cliente.Poblacion,
-						cliente.Provincia,
-						cliente.Telefono,
-						domicilio.Nombre,
-						domicilio.Poblacion,
-						domicilio.Simogan,
-						empresaTransporte.CIF,
-						empresaTransporte.Nombre,
-						salida.FFin,
-						salida.FInicio,
-						salida.Fecha,
-						salidaViaje.Numero,
-						salidaViaje.Observaciones,
-						salidaViaje.id,
-						serie.Nombre,
-						provinciaCliente.Nombre,
-						provinciaDomicilio.Nombre,
-						vehiculo.Matricula,
-						vehiculo.Remolque
-				);
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[InformeExpediciones_SalidaLinea] AS (
-					SELECT
-						producto.Nombre AS ProductoNombre,
-						puntoDescarga.Nombre AS PuntoDescargaNombre,
-						salidaLinea.Bruto AS SalidaLineaBruto,
-						salidaLinea.Id AS SalidaLineaId,
-						(salidaLinea.Bruto - salidaLinea.Tara) AS SalidaLineaNeto,
-						salidaLinea.Observaciones AS SalidaLineaObservaciones,
-						salidaLinea.Tara AS SalidaLineaTara,
-						salidaViaje.id AS SalidaViajeId
-					FROM
-						[SalidasViajes] salidaViaje
-					INNER JOIN [SalidasLinias] salidaLinea ON salidaViaje.id = salidaLinea.idviajes
-						INNER JOIN [Ordenes] orden ON salidaLinea.id = orden.LineaSalida
-							INNER JOIN [Resultados] resultado ON orden.Id = resultado.Orden
-								INNER JOIN [Productos] producto ON resultado.Producto = producto.Id
-						LEFT JOIN [PuntosDescarga] puntoDescarga ON salidaLinea.idPuntoDescarga = puntoDescarga.id
-					GROUP BY
-						salidaLinea.Bruto,
-						salidaLinea.id,
-						salidaLinea.Observaciones,
-						salidaLinea.Tara,
-						salidaViaje.id,
-						producto.Nombre,
-						puntoDescarga.Nombre
-				);
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[InformeExpediciones_SalidaLinea_Resultado] AS (
-					SELECT
-						lote.Nombre AS LoteNombre,
-						SUM(resultado.Cantidad) AS ResultadoCantidad,
-						salidaLinea.id AS SalidaLineaId,
-						unidad.Nombre AS UnidadNombre
-					FROM
-						[SalidasViajes] salidaViaje
-					INNER JOIN [SalidasLinias] salidaLinea ON salidaViaje.id = salidaLinea.idviajes
-						INNER JOIN [Ordenes] orden ON salidaLinea.id = orden.LineaSalida
-							INNER JOIN [Resultados] resultado ON orden.Id = resultado.Orden
-								INNER JOIN [Lotes] lote ON resultado.Lote = lote.Id
-								INNER JOIN [Productos] producto ON resultado.Producto = producto.Id
-								LEFT JOIN [Unidades] unidad ON resultado.Unidad = unidad.Id
-						LEFT JOIN [PuntosDescarga] puntoDescarga ON salidaLinea.idPuntoDescarga = puntoDescarga.id
-					GROUP BY
-						lote.Nombre,
-						salidaLinea.id,
-						unidad.Nombre
-				);
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[LineasSalidasAgrupLoteYOrden] AS
-				(
-					SELECT 
-						* 
-					FROM 
-						(
-							SELECT 
-								ISNULL(r.Lote, 0) AS Lote,
-								ISNULL(o.Id, 0) AS IdOrdenAgrup, 
-								ISNULL (sl.id, 0) AS IdSalidaLinea,  
-								SUM(r.cantidad) AS CantidadAgrup
-							FROM 
-								Resultados AS r
-							LEFT OUTER JOIN 
-								Ordenes AS o ON o.Id = r.orden
-							LEFT OUTER JOIN  
-								Modulos AS m ON m.Id = o.Modulo 
-							LEFT OUTER JOIN 
-								SalidasLinias AS sl ON sl.id = o.LineaSalida 
-							WHERE 
-								m.TipoModulo = 5 
-							GROUP BY 
-								r.Lote, 
-								o.Id, 
-								sl.id 
-						) AS lista
-					LEFT OUTER JOIN 
-						SalidasLineasExtended AS datos ON datos.id = lista.IdSalidaLinea
-				);
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ListaAlarmas] as
-				select NA.Id as IDAlarma
-					, NA.FechaError as FechaError
-					, NA.RespFecha as FechaRespuesta
-					, datediff( second, NA.FechaError , NA.RespFecha )  as SegundosAlarma
-					, NA.idOrden
-					, NA.IdPlc as IDError
-					, NATipos.TextoError as DescripcionError
-					, NA.Respuesta as IDRespuesta
-					, NAResp.Texto 
-					, NA.idDosificacion 
-					, orden.Nombre as OrdenNombre
-					, ordenProd.Nombre as OrdenProductoFinalNombre
-					, ordenProd.Referencia as OrdenProductoFinalRef
-					, Dosis.Producto as DosificacionIdProducto
-					, DosisProd.Nombre as DosificacionNombreProducto
-					, DosisProd.Referencia  as DosificacionReferenciaProducto
-					, NA.RespPC as PCRespuesta
-					, NA.TextoOpcional as textoOpcional
-					, NA.TextoAdicional as textoAdicional
-					, modulo.Nombre as Modulo
-					, medidor.Nombre as Medidor
-					, NA.idMotor as MotorId
-					, motor.NombreMes as MotorNombreMes
-					, motor.TAG as MotorTag
-					, seccion.Nombre as seccion
-					, gruposeccion.Nombre as gruposeccion
-
-				from NetAlarmas as NA
-				left outer join NetAlarmasTipos as NATipos on NATipos.IdAlarmaPLC = NA.IdPlc 
-				left outer join NetAlarmasRespuestas  as NAResp on NAResp.id = NA.Respuesta 
-				left outer join Ordenes  as orden on orden.Id = NA.idOrden 
-				left outer join Productos  as ordenProd on ordenProd.Id = orden.ProductoDestino 
-				left outer join Dosificaciones as Dosis on Dosis.Id = NA.idDosificacion 
-				left outer join Productos as DosisProd on DosisProd.Id = Dosis.Producto 
-				left outer join Modulos  as modulo on modulo.Id = NA.IdModulo 
-				left outer join Medidores   as medidor on medidor.Id = NA.idMedidor 
-				left outer join Motores    as motor on motor.id = NA.idMotor
-				left outer join Secciones as seccion on seccion.Id = NA.IdSeccion 
-				left outer join SeccionesGrupos as gruposeccion on gruposeccion.id = NA.IdGrupo
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ListaDesgloses]
-				as
-				select 
-				D.Id 
-				, D.Orden
-				, P.Nombre as Producto
-				, U.Nombre as Ubicacion
-				, D.Cantidad 
-				, D.CantidadPrincipal 
-				, Ud.Nombre as Unidad
-				, L.Nombre as Lote
-				from Desgloses as D
-				left outer join Productos as P on P.Id = D.Producto
-				left outer join Ubicaciones as U on U.Id = D.Ubicacion 
-				left outer join Unidades as Ud on Ud.Id = D.Unidad 
-				left outer join Lotes as L on L.id = D.Lote
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ListaDosificaciones] as
-
-				select 
-				D.Id
-				, isnull(D.Orden ,0) as Orden
-				, P.Nombre 
-				, (D.Porcentaje/100 ) as Porcentaje
-				, D.Cantidad 
-				, U.Nombre as Unidad 
-				--, D.Inicio --Esto no sirve.. esto ya son resultados..
-				--, D.Fin
-				, L.Nombre as Lote  --En teoría no .. ya que se asignará la que corresponda... O se puede especificar lote a usar en producción?
-				, Mo.Nombre as Modulo
-				, Mo.OrdenProduccion as ModuloOrdenacion
-				, M.Nombre as Medidor
-				, D.PosicionDosificacion
-				, Ub.Nombre as OrigenPrincipal
-				, Ub.Nombre + isnull( STUFF((
-						  SELECT ',' + U.Nombre
-						  from MultiDosificaciones   as D2 
-							INNER JOIN Ubicaciones AS U ON U.Id = D2.idUbicacion  
-							where D2.idDosificacion  = D.Id 
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, ''),'') as Origenes
-
-
-
-				from Dosificaciones as D
-				inner join Ordenes  as O on O.Id=D.Orden 
-				left outer join Productos as P on D.Producto = P.Id 
-				left outer join Unidades as U on U.Id = P.Unidad 
-				left outer join lotes as L on L.Id = D.Lote 
-				left outer join Medidores as M on M.Id = D.Medidor 
-				left outer join Modulos as Mo on Mo.id = M.Modulo 
-				left outer join Ubicaciones as Ub on Ub.Id = D.Ubicacion 
-
-
-				--where D.Orden = 161 
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ListaOrdenes]
-				AS
-
-				select 
-				O.Id as IdOrden
-				, S.Nombre as Serie
-				, M.Nombre as Modulo
-				, O.Nombre
-				, CO.Id as IdCabecera 
-				, CO.Nombre as NombreCabecera
-				, isnull(P.Nombre,'') as Producto
-				, isnull(L.Nombre, '') as Lote
-				--, O.Fecha as Fecha
-				, cast(O.Fecha  as date)  as Fecha
-				, O.Cantidad as Cantidad
-				, O.NumeroCiclos as Ciclos
-				, round((select isnull(sum(cantidad),0) from Resultados as R where R.Orden = O.Id ),3) as CantidadReal
-				, isnull(F.Nombre ,'') as Formula
-
-				,  STUFF((
-						  SELECT ',' + U.Nombre
-						  from Dosificaciones  as D 
-							INNER JOIN Ubicaciones AS U ON U.Id = D.Ubicacion 
-							where D.Orden = O.Id
-							order by D.PosicionDosificacion desc
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as Origenes
-
-				,  STUFF((
-						  SELECT ',' + U.Nombre
-						  from Desgloses   as D 
-							INNER JOIN Ubicaciones AS U ON U.Id = D.Ubicacion 
-							where D.Orden = O.Id
-							order by D.Id  desc
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, '') as Destinos
-
-
-				, case O.Estado 
-					when 0 then 'Pendiente'
-					when 1 then 'Procesando'
-					when 2 then 'Retenida'
-					when 3 then 'Iniciando'
-					when 4 then 'Eliminada'
-					when 5 then 'Detenida'
-					when 6 then 'Finalizada'
-					when 7 then 'Interrumpida'
-					when 8 then 'Forzada'
-					else 'Desconocido'
-					end as Estado
-		
-				, cast(O.Inicio as time)  as Inicio
-				, cast(O.Fin as time)  as Fin  
-				, Case O.Modificada
-					when 1 then 'Si'
-					when 0 then 'No'
-					end as Modificada
-
-				 from Ordenes as O
-				 inner join CabOrdenes as CO on O.IdCab = CO.id 
-				 left outer join Series as S on S.Id = O.Serie 
-				 left outer join Productos as P on O.ProductoDestino  = P.Id 
-				 left outer join Modulos as M on M.Id = O.Modulo 
-				 left outer join Lotes as L on O.LoteDestino = L.Id 
-				 left outer join Formulas as F on O.Formula = F.Id  
- 
-				 --left outer join Ubicaciones as UOri on UOri .Id = O.
-				 ;
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ListaResultados] as 
-				select 
-				R.Id
-				, R.Serie
-				, R.Orden 
-				, R.Ciclo 
-				, P.Nombre as Producto
-				, P.Referencia as Referencia
-				, P.Referencia2 as Referencia2
-				, U.Nombre  as Ubicacion
-				, R.Cantidad 
-				, R.CantidadPrincipal 
-				, R.Inicio 
-				, R.Fin 
-				, L.Nombre as Lote
-				, R.PosicionDosificacion 
-				, M.Nombre as Medidor
-				, Mo.OrdenProduccion as ModuloOrdenacion
-				, Mo.Nombre as Modulo 
-				, case R.Estado
-					when 0 then 'Pendiente'
-					when 1 then 'Registrado'
-					when 2 then 'Regularizado'
-					when 3 then 'Desglosado'
-					when 4 then 'Modificado'
-					when 5 then 'Agregado Manualmente'
-					end as Estado
-
-				from Resultados as R
-
-				left outer join Productos as P on P.Id = R.Producto 
-				left outer join Ubicaciones as U on U.Id = R.Ubicacion 
-				left outer join Lotes as L on L.Id = R.Lote 
-				left outer join Medidores as M on M.Id = R.Medidor 
-				left outer join Modulos  as Mo on Mo.Id = M.Modulo 
-				;
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[LoteClienteDomicilio]
-				AS
-				select 
-				l.Id AS IdLote,
-				min(o.Id) as idorden,
-				MIN(s.id) as idsalida,
-				min(c.Nombre) AS Cliente,
-				min(d.Nombre) AS Domicilio,
-				min(d.Direccion) AS Direccion,
-				SUM(r.Cantidad) AS TotalServido,
-				MIN(s.Codigo ) as NumeroSalida,
-				MIN(d.MarcaOficial) as MarcaOficial,
-				sl.id as idlinea
-				 from Resultados as r
-				LEFT OUTER JOIN dbo.Lotes AS l ON l.Id = r.Lote
-				LEFT OUTER JOIN dbo.Ordenes AS o ON o.Id = r.Orden
-				LEFT OUTER JOIN dbo.Salidas AS s ON s.Id = o.Salida
-				LEFT OUTER JOIN dbo.SalidasLinias AS sl ON sl.Id = o.LineaSalida
-				LEFT OUTER JOIN dbo.Clientes AS c ON c.Id = s.idCliente
-				LEFT OUTER JOIN dbo.Domicilios AS d ON d.Id = sl.idDomicilio
-
-				 --where r.Lote = 35768
-				 group by sl.Id , l.Id ;
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[LoteProveedor]
-				AS
-				select 
-					l.id as IdLote
-					, isnull(pl.Nombre, p.Nombre  ) as Proveedor
-					, isnull(isnull(l.CantidadPedida, sum(D.Cantidad)), el.CantidadPedida) as TotalRecibido,
-							STUFF((
-						  SELECT distinct ' - ' + elo.LoteProveedor
-						  from EntradasLotes  as elo, EntradasLineas el2
-							WHERE elo.IdEntradasLineas = el2.id AND el2.Lote = l.Id
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') as LotesProveedor
-				from Lotes as l
-				left outer join Proveedores as pl on pl.Id = l.IdProveedor 
-				left outer join EntradasLineas as el on el.Lote = l.Id
-				left outer join Entradas as e on e.id = el.idEntradas  
-				LEFT OUTER JOIN Proveedores AS p ON p.Id = e.idProveedor
-				left outer join Ordenes as O on O.LineaEntrada = el.id 
-				left outer join Desgloses as D on D.Orden = O.Id 
-				group by l.Id , pl.Nombre, p.Nombre, el.CantidadPedida, l.CantidadPedida
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[LoteProveedorNOCantidad]
-				AS
-				SELECT 
-					l.id as IdLote
-					, isnull(pl.Nombre, p.Nombre  ) as Proveedor
-							,STUFF((
-						  SELECT distinct ' - ' + elo.LoteProveedor
-						  FROM EntradasLotes  as elo, EntradasLineas el2
-							WHERE elo.IdEntradasLineas = el2.id AND el2.Lote = l.Id
-						  FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS LotesProveedor
-				FROM Lotes as l
-				LEFT OUTER JOIN Proveedores as pl on pl.Id = l.IdProveedor 
-				LEFT OUTER JOIN EntradasLineas as el on el.Lote = l.Id
-				LEFT OUTER JOIN Entradas as e on e.id = el.idEntradas  
-				LEFT OUTER JOIN Proveedores AS p ON p.Id = e.idProveedor
-				LEFT OUTER JOIN Ordenes as O on O.LineaEntrada = el.id 
-				LEFT OUTER JOIN Desgloses as D on D.Orden = O.Id 
-
-				GROUP BY l.Id , pl.Nombre, p.Nombre
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[OrdenesDetalle]
-				AS
-
-				SELECT        
-				MIN(o.Nombre) AS NombreOrden, 
-				o.Id, MIN(c.Nombre) AS NombreCabecera, 
-				MIN(m.Nombre) AS NombreModulo, 
-				CONVERT(date, o.Fecha) AS Fecha, 
-				o.NumeroCiclos, 
-				p.Nombre AS NombreProducto, 
-				un.Nombre AS NombreUnidad,
-				l.Nombre AS NombreLote,
-				ROUND ((SELECT ISNULL(SUM(Cantidad),0)
-						FROM Dosificaciones AS d
-						WHERE d.Orden = o.Id), 3) AS CantidadTCiclo,
-				ROUND ((SELECT ISNULL(SUM(Cantidad),0)
-						FROM Dosificaciones AS d
-						WHERE d.Orden = o.Id) * o.NumeroCiclos, 3) AS CantidadTOrden
-
-				FROM            dbo.Ordenes		AS o 
-				LEFT OUTER JOIN dbo.Productos	AS p	ON p.Id = o.ProductoDestino
-				LEFT OUTER JOIN dbo.Lotes		AS l	ON l.Id = o.LoteDestino
-				INNER JOIN      dbo.CabOrdenes	AS c	ON c.Id = o.IdCab
-				LEFT OUTER JOIN dbo.Modulos		AS m	ON m.Id = o.Modulo
-				LEFT OUTER JOIN dbo.Unidades	AS un	ON un.Id = p.Unidad
-
-				GROUP BY o.Id, o.Fecha, o.NumeroCiclos, p.Nombre, l.Nombre, un.Nombre
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[PivotProduccion]
-				AS
-
-				--Resgistrs de resultados para ver lo que se ha consumido realmente
-
-				SELECT O.Id ,O.Nombre, O.Fecha , O.Serie    
-				, P2.Nombre as NombreProductoFinal
-				, P.Nombre as NombreProducto
-				, D.Producto as CodProducto
-				, D.Cantidad as CantidadTeorica 
-				, D.Ubicacion as CodUbicacionTeorica
-				, U1.Nombre as NombreUbicacionTeorica
-				, R.Ciclo as NCiclo
-				, R.Cantidad as CantidadReal
-				, R.Ubicacion as CodUbicacionReal
-				, U2.Nombre as NombreUbicacionReal
-				, Med.Nombre as Medidor
-				, M.Nombre as Modulo
-				, M.TipoModulo as TipoModulo
-				, R.Orden  as IdOrden
-				, P2.Referencia as ReferenciaProductoFinal
-				, P.Referencia as ReferenciaIngrediente
-				, R.Inicio as Inicio
-				, R.Fin as Fin
-				, R.TiempoEfectivo as TiempoEfectivo
-				, R.TiempoTotal as TiempoTotal
-				, R.LoteNombre as LoteIngrediente
-				, R.Lote as IdLoteIngrediente
-				, R.KwhEfectivo as kwhEfectivo
-				, R.KWhTotal as KwhTotal
-				, R.Temperatura as Temperatura
-				, R.Humedad as Humedad
-				, R.TimeStamp as FechaConsumido
-				, P.Tipo AS TipoProducto
-				, P2.Tipo AS TipoProductoFinal
-				, ISNULL(R.Id,-1) as IdConsumido
-				, ISNULL (D.Id,-1) as IdDosificacion
-				--, ISNULL(ROW_NUMBER() OVER(ORDER BY O.Fecha DESC), -1) AS RowID
-				,ISNULL(ROW_NUMBER() OVER(ORDER BY (SELECT NULL)),-1) AS RowID
-
-				from Resultados as R
-				left outer join Medidores   as Med on Med.Id = R.Medidor  
-				left outer join Modulos   as M on M.Id = Med.Modulo 
-				left outer join Dosificaciones as D on D.Id = R.IdDosificacion
-				inner join Ordenes as O on R.Orden = O.Id 
-
-				--canvi [05/11/2020]-----------------------------
-				--inner join Productos as P on D.Producto = P.Id 
-				inner join Productos as P on R.Producto = P.Id 
-				-------------------------------------------------
-
-				left outer join Productos as P2 on O.ProductoDestino  = P2.Id 
-				left outer join Ubicaciones as U1 on D.Ubicacion = U1.Id 
-				left outer join Ubicaciones as U2 on R.Ubicacion = U2.Id 
-
-				where (O.estado=5 or O.estado=20) and R.Cantidad is not null
-				--where O.Modulo = 6 
-
-
-				union
-
-				--Dosificaciones que no han tenido registros de resultados... como hay valores de origen, hay que tenerlos en cuenta...
-				-- para los valores teoricos
-
-				SELECT O.Id ,O.Nombre, O.Fecha , O.Serie    
-				, P2.Nombre as NombreProductoFinal
-				, P.Nombre 
-				, D.Producto 
-				, D.Cantidad 
-				, D.Ubicacion as CodUbicacionTeorica
-				, U1.Nombre 
-				, 0
-				, 0
-				, 0 
-				, ''
-				, Med.Nombre as Medidor
-				, M.Nombre as Modulo
-				, M.TipoModulo as TipoModulo
-				, D.Orden  as IdOrden
-				, P2.Referencia as ReferenciaProductoFinal
-				, '' as ReferenciaIngrediente
-				, null as Inicio
-				, null as Fin
-				, null as TiempoEfectivo
-				, null as TiempoTotal
-				, '' as LoteIngrediente
-				, null as IdLoteIngrediente
-				, null as kwhEfectivo
-				, null as KwhTotal
-				, null as Temperatura
-				, null as Humedad
-				, null as FechaConsumido
-				, P.Tipo AS TipoProducto
-				, P2.Tipo AS TipoProductoFinal
-				, null as IdConsumido
-				, D.Id as IdDosificacion
-				--, ISNULL(ROW_NUMBER() OVER(ORDER BY O.Fecha DESC), -1) AS RowID
-				,ISNULL(ROW_NUMBER() OVER(ORDER BY (SELECT NULL)),-1) AS RowID
-
-				from Dosificaciones  as D
-				left outer join Resultados  as R on D.Orden = R.Orden and D.Producto = R.Producto 
-				left outer join Medidores   as Med on Med.Id = D.Medidor 
-				left outer join Modulos   as M on M.Id = D.IdModulo 
-
-				inner join Ordenes as O on D.Orden = O.Id 
-				inner join Productos as P on D.Producto = P.Id 
-				left outer join Productos as P2 on O.ProductoDestino  = P2.Id 
-				inner join Ubicaciones as U1 on D.Ubicacion = U1.Id 
-
-				where (O.estado=5 or O.estado=20) and R.id is null
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[PivotProduccionProducidos]
-				as
-				select 
-					O.Id  as IdOrden	
-					, O.Nombre as NombreOrden
-					, O.Fecha as FechaOrden
-					, O.Inicio as FechaInicioOrden
-					, O.Fin as FechaFinOrden
-					, O.Caminos as CaminoOrden
-					, O.NumeroCiclos as CiclosOrden
-					, O.Cantidad as CantidadOrdenCiclo
-					, O.Cantidad * O.NumeroCiclos as CantidadTotalOrden
-					, case O.Estado
-						when 5 then 'Finalizada'
-						when 20 then 'Cancelada'
-						else ''
-						 end as EstadoOrden
-					, O.Formula as IdFormual
-					, F.Nombre as NombreFormula
-					, O.[Version] as IdVersionFormula
-					, V.Nombre as NombreVersion
-					, Med.Nombre as Medidor
-					, M.Nombre as Modulo
-					, P.Nombre as NombreProductoProducido
-					, P.Referencia as RefProductoProducido
-					, P2.Nombre as NombreProductoOrden
-					, P2.Referencia as RefProductoOrden
-					, U1.Nombre as NombreDestino
-					, D.Cantidad as Cantidad
-					, D.TiempoEfectivo  as TiempoEfectivo
-					, D.TiempoTotal as TiempoTotal
-					, D.KWhEfectivo as KwhEfectivo
-					, D.KWhTotal as KwhTotal
-					, D.Temperatura as Temperatura
-					, D.Humedad as Humedad
-					, D.Ciclo as Ciclo
-					, D.Lote as IdLoteProducido
-					, L.Nombre as NombreLoteProducido
-					, D.Fecha as FechaProducido
-					, P.Tipo AS TipoProducto
-					, ISNULL(D.Id,-1) as IdProducido
-					--, ISNULL(ROW_NUMBER() OVER(ORDER BY O.Fecha DESC), -1) AS RowID
-					,ISNULL(ROW_NUMBER() OVER(ORDER BY (SELECT NULL)),-1) AS RowID
-	
-
-
-
-				from Desgloses as D
-					left outer join Medidores   as Med on Med.Id = D.MedidorId 
-					left outer join Modulos   as M on M.Id = Med.Modulo 
-					inner join Ordenes as O on D.Orden = O.Id 
-					inner join Productos as P on D.Producto = P.Id 
-					left outer join Productos as P2 on O.ProductoDestino  = P2.Id --Producto original de la orden.
-					left outer join Ubicaciones as U1 on D.Ubicacion = U1.Id 
-					left outer join Formulas as F on F.Id = O.Formula 
-					left outer join Versiones as V on V.Id = O.[Version] 
-					left outer join Lotes as L on L.Id = D.Lote 
-				where (O.estado=5 or O.estado=20)
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ProducidoOrden]
-				AS
- 
-					SELECT       
-					o.Modulo,
-					o.Id, 
-					o.Fecha,
-					p.Id AS IdProducto,
-					p.Nombre AS NombreProducto, 
-					p.PartidaArancelariaFabricacion,
-					l.Id AS IdLote,
-					l.Nombre AS NombreLote,
-					ROUND ((SELECT ISNULL(SUM(Cantidad),0)
-							FROM Desgloses AS d
-							WHERE d.Orden = o.Id), 0) AS CantidadProducida,
-					un.Nombre AS NombreUnidad,
-					u.Nombre AS UbicacionDestino
-
-					FROM            dbo.Ordenes		AS o 
-					LEFT OUTER JOIN dbo.Productos	AS p	ON p.Id = o.ProductoDestino
-					LEFT OUTER JOIN dbo.Lotes		AS l	ON l.Id = o.LoteDestino
-					LEFT OUTER JOIN dbo.Unidades	AS un	ON un.Id = p.Unidad
-					LEFT OUTER JOIN dbo.Disposiciones AS d  ON d.Orden = o.Id 
-					LEFT OUTER JOIN dbo.Ubicaciones AS u    ON d.Ubicacion = u.Id 
-
-					WHERE o.Modulo  = 12
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ProducidoConsumidoOrden]
-				AS
-					SELECT 
-					PO.Id,
-					PO.Fecha,
-					PO.IdProducto,
-					PO.NombreProducto,
-					PO.IdLote,
-					PO.NombreLote,
-					PO.CantidadProducida,
-					PO.NombreUnidad AS UdProd,
-					PO.UbicacionDestino,
-					--PO.PartidaArancelariaFabricacion,
-					ROUND(SUM(CO.Cantidad), 3) AS TotalDosificado,
-					CO.UnidadNombre AS UdCons,
-					CO.Producto AS IdProDosi,
-					CO.PartidaArancelariaCompras,
-					CO.PartidaArancelariaFabricacion,
-					CO.Lote AS IdLoteDosi
-	
-					FROM dbo.ProducidoOrden AS PO
-					LEFT OUTER JOIN dbo.ConsumidoOrden AS CO ON PO.Id = CO.IdOrden
-
-					--WHERE CO.Producto = 302 AND CO.Lote = 206460
-
-					GROUP BY 
-						PO.Id,
-						PO.Fecha,
-						PO.IdProducto,
-						PO.NombreProducto,
-						PO.IdLote,
-						PO.NombreLote,
-						PO.CantidadProducida,
-						PO.NombreUnidad,
-						PO.UbicacionDestino,
-						--PO.PartidaArancelariaFabricacion,
-						CO.UnidadNombre,
-						CO.Producto,
-						CO.Lote,
-						CO.PartidaArancelariaCompras,
-						CO.PartidaArancelariaFabricacion
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[TotalCantidadPorOrden]
-				AS
-
-				SELECT 
-
-				o.Id AS IdOrden,
-				SUM(r.Cantidad) AS Total
-
-				FROM			dbo.Resultados	AS r
-				LEFT OUTER JOIN dbo.Ordenes		AS o  ON o.Id = r.Orden
-
-				GROUP BY o.Id
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[TotalProducidoPorOrden]
-				AS
- 
-				SELECT 
-
-				o.Id AS IdOrden,
-				SUM(d.Cantidad) AS Total
-
-				FROM dbo.Desgloses AS d
-				LEFT OUTER JOIN dbo.Ordenes AS o  ON o.Id = d.Orden
-
-				GROUP BY o.Id
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ProductoLotePrimerNivel]
-				AS
-
-				SELECT 
-
-				o.Id AS IdOrden,
-				MIN(o.Nombre) AS Orden, 
-				p.Id AS Producto,
-				MIN(p.Nombre) AS NombreProducto,
-				MIN(p.Referencia) AS RefProducto,
-				o.LoteDestino AS Lote,
-				MIN(l.Nombre) AS NombreLote,
-				r.Producto AS ProductoOrigen,
-				MIN(p2.Nombre) AS NombreProductoOrigen,
-				MIN(p2.Referencia) as RefProductoOrigen,
-				r.Lote as LoteOrigen,
-				MIN(l2.Nombre) AS NombreLoteOrigen,
-				SUM(r.Cantidad) AS Total,
-				MIN(t.Total) AS TotalOrden,
-				MIN(t2.Total) AS TotalProducidoOrden,
-				1 AS Nivel 
-
-				FROM			dbo.Resultados	AS r
-				LEFT OUTER JOIN dbo.Ordenes		AS o  ON o.Id = r.Orden
-				left outer join dbo.Modulos as m on o.Modulo = m.Id 
-				LEFT OUTER JOIN dbo.Productos	AS p  ON p.Id = o.ProductoDestino
-				LEFT OUTER JOIN dbo.Lotes		AS l  ON l.Id = o.LoteDestino
-				LEFT OUTER JOIN dbo.TotalCantidadPorOrden AS t ON o.Id = t.IdOrden
-				LEFT OUTER JOIN dbo.TotalProducidoPorOrden AS t2 ON o.Id = t2.IdOrden
-				LEFT OUTER JOIN dbo.Productos	AS p2  ON p2.Id = r.Producto
-				LEFT OUTER JOIN dbo.Lotes		AS l2  ON l2.Id = r.Lote
-
-				WHERE o.ProductoDestino IS NOT NULL 
-					AND o.LoteDestino IS NOT NULL
-					and ((m.TipoModulo >=100 and m.TipoModulo <=200) or m.TipoModulo =7)
-
-				GROUP BY o.Id, p.Id, o.LoteDestino, r.Producto, r.Lote
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ProductoLotePrimerNivelProvCli]
-				AS
-
-				SELECT 
-
-				o.Id AS IdOrden,
-				MIN(o.Nombre) AS Orden, 
-				p.Id AS Producto,
-				MIN(p.Nombre) AS NombreProducto,
-				MIN(p.Referencia) AS RefProducto,
-				o.LoteDestino AS Lote,
-				MIN(l.Nombre) AS NombreLote,
-				r.Producto AS ProductoOrigen,
-				MIN(p2.Nombre) AS NombreProductoOrigen,
-				MIN(p2.Referencia) as RefProductoOrigen,
-				r.Lote as LoteOrigen,
-				MIN(l2.Nombre) AS NombreLoteOrigen,
-				SUM(r.Cantidad) AS Total,
-				MIN(t.Total) AS TotalOrden,
-				MIN(t2.Total) AS TotalProducidoOrden,
-				1 AS Nivel,
-				MIN(l3.Proveedor) AS NombreProveedor,
-				MIN(l3.TotalRecibido) AS TotalRecibido,
-				l4.Cliente AS NombreCliente,
-				l4.Direccion AS DireccionCliente,
-				l4.TotalServido AS TotalServido,
-				l4.Domicilio AS DomicilioCliente,
-				l4.MarcaOficial AS MarcaOficial
-
-				FROM			dbo.Resultados	AS r
-				LEFT OUTER JOIN dbo.Ordenes		AS o  ON o.Id = r.Orden
-				LEFT OUTER JOIN dbo.Modulos as m on o.Modulo = m.Id 
-				LEFT OUTER JOIN dbo.Productos	AS p  ON p.Id = o.ProductoDestino
-				LEFT OUTER JOIN dbo.Lotes		AS l  ON l.Id = o.LoteDestino
-				LEFT OUTER JOIN dbo.TotalCantidadPorOrden AS t ON o.Id = t.IdOrden
-				LEFT OUTER JOIN dbo.TotalProducidoPorOrden AS t2 ON o.Id = t2.IdOrden
-				LEFT OUTER JOIN dbo.Productos	AS p2  ON p2.Id = r.Producto
-				LEFT OUTER JOIN dbo.Lotes		AS l2  ON l2.Id = r.Lote
-				LEFT OUTER JOIN dbo.LoteProveedor		AS l3  ON l3.IdLote = r.Lote
-				LEFT OUTER JOIN dbo.LoteClienteDomicilio		AS l4  ON  l4.idlinea=o.LineaSalida --and l4.IdLote = o.LoteDestino   
-
-				/* Quitados filtros ya que me quitaban la información de los viajes de camiones...*/
-				--WHERE --o.ProductoDestino IS NOT NULL 
-					--AND o.LoteDestino IS NOT NULL
-					--and 
-					--((m.TipoModulo >=100 and m.TipoModulo <=200) or m.TipoModulo =7)
-
-				GROUP BY o.Id, p.Id, o.LoteDestino, r.Producto, r.Lote, l3.Proveedor, l3.TotalRecibido, l4.Cliente, l4.Direccion, l4.TotalServido, l4.Domicilio, l4.MarcaOficial
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[RecetasExtended] as
-				select 
-					R.id 
-					, S.Nombre 
-					, S.Fecha 
-					, R.NumReceta 
-					, C.Nombre as ClienteNombre
-					, D.Nombre as DomicilioNombre
-					, D.Direccion 
-					, D.CodigoPostal 
-					, D.Poblacion 
-					, PD.Nombre  as DomicilioProvincia
-					, D.Especie
-					, D.NumeroEspecies 
-					, D.Simogan 
-					, D.REGA 
-					, D.MarcaOficial 
-					, A.Nombre as Afeccion
-					, A.Referencia as RefAfeccion
-					, R.Indicaciones 
-					, R.Frecuencia 
-					, R.Duracion 
-					, R.TiempoEspera 
-					, R.Conservacion 
-					, R.Observaciones 
-					, R.NaturalezaTratamiento 
-					, R.TiempoEsperaLeche 
-					, R.TiempoEsperaHuevos 
-					, R.NumRegistro 
-					, V.Nombre as VeterinarioNombre
-					, V.Apellidos as VeterinarioApellidos
-					, V.NColegiado as VeterinarioNColegiado
-					, E.Nombre as EmpresaNombre
-					, E.Autorizacion as EmpresaAutorizacion
-					, E.Direccion as EmpresaDireccion
-					, E.Poblacion as EmpresaPoblacion
-					, E.CodigoPostal as EmpresaCodPostal
-					, E.Provincia as EmpresaProvincia
-					, R.CantidadPienso
-					, P.Nombre as ProductoNombre
-					, P.Referencia as ProductoRef
-					, P.Referencia2 as ProductoRef2
-					, R.proporcionDiaria
-
-				from Recetas as R
-				left outer join Series as S on R.idSerie = S.Id 
-				left outer join Clientes  as C on R.idCliente  = C.Id 
-				left outer join Domicilios   as D on R.idDomicilio   = D.Id 
-				left outer join Provincias     as PD on D.Provincia     = PD.Id 
-				left outer join Afecciones    as A on R.idAfeccion    = A.Id 
-				left outer join Veterinarios    as V on R.idveterinario    = V.id
-				left outer join Empresas    as E on V.idEmpresa    = E.Id 
-				left outer join Productos   as P on R.idProducto= P.id
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[RecetasLineasExtended] as
-				select 
-					RL.idReceta 
-					, RL.Cantidad 
-					, RL.Porcentaje   
-					, M.Nombre as Medicamento
-					, M.Referencia as RefMedicamento
-					, P.Nombre as Producto
-					, P.Referencia as RefProducto
-					, P.Referencia2 as RefProducto2
-					, P.NumeroRegistro 
-
-				from RecetasLineas as RL
-				left outer join Medicaciones  as M on M.Id = RL.idMedicamento 
-				left outer join Productos  as P on P.Id = M.idProducto
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[recursivo] as
-				WITH VistaProductos (ProductoDest, LoteDest, ProductoOrig, LoteOrig, OrdenProd, NivelProducto)
-				AS
-				(
-				SELECT 
-
-				Producto,
-				Lote,
-				ProductoOrigen,
-				LoteOrigen,
-				Orden,
-				0 as NivelProducto
-	   
-				FROM 
-
-				ProductoLotePrimerNivel AS pl
-
-				--WHERE pl.Nivel = 1 AND ProductoOrigen = 24 AND LoteOrigen = 2505
-
-				UNION ALL
-
-				SELECT 
-
-				Producto,
-				Lote,
-				ProductoOrigen,
-				LoteOrigen,
-				Orden,
-				NivelProducto + 1
-	   
-				FROM 
-
-				ProductoLotePrimerNivel AS pl
-
-				INNER JOIN VistaProductos as v
-				ON pl.ProductoOrigen = v.ProductoDest AND pl.LoteOrigen = v.LoteDest
-
-				)
-
-				SELECT * 
-				FROM VistaProductos
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ResultadosDetalle]
-				AS
-
-				SELECT        
-				r.Orden, 
-				r.Cantidad, 
-				m.Nombre AS NombreMedidor, 
-				un.Nombre AS NombreUnidad, 
-				u.Nombre AS NombreUbicacion, 
-				p.Nombre AS NombreProducto, 
-				r.PosicionDosificacion, 
-				l.Nombre AS NombreLote, 
-				r.Ciclo,
-				d.Cantidad AS CantidadTeorica,
-				p.DesviacionMaxima AS DesviacionProducto,
-				p.Id AS Producto
-
-				FROM            dbo.Resultados	AS r
-				LEFT OUTER JOIN dbo.Lotes		AS l  ON l.Id = r.Lote
-				LEFT OUTER JOIN dbo.Productos	AS p  ON p.Id = r.Producto 
-				LEFT OUTER JOIN dbo.Ubicaciones AS u  ON u.Id = r.Ubicacion 
-				LEFT OUTER JOIN dbo.Medidores	AS m  ON m.Id = r.Medidor 
-				LEFT OUTER JOIN dbo.Unidades	AS un ON un.Id = r.Unidad
-				LEFT OUTER JOIN dbo.Dosificaciones AS d ON d.PosicionDosificacion = r.PosicionDosificacion
-
-				WHERE d.Orden = r.Orden
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ResultadosExtended] AS 
-				SELECT
-					Res.Id,
-					Res.Orden AS IdOrden,
-					orden.Entrada AS IdEntradaOrden,
-					orden.LineaEntrada AS IdLineaEntradaOrden,
-					orden.Salida AS IdSalidaOrden,
-					orden.LineaSalida AS IdLineaSalidaOrden,
-					SalLin.idviajes AS IdViajeLineaSalidaOrden,
-					Res.Pesada,
-					Res.Ubicacion,
-					Ubi.Nombre AS UbicacionNombre,
-					Ubi.Referencia AS UbicacionReferencia,
-					Res.Cantidad,
-					Res.Parcial,
-					Res.Proceso,
-					Res.Estado,
-					Res.Inicio,
-					Res.Fin,
-					Res.Lote,
-					L.Nombre AS LoteNombre,
-					L.Referencia AS LoteReferencia,
-					Res.Producto,
-					P.Nombre AS ProductoNombre,
-					P.Referencia AS ProductoReferencia,
-					P.Referencia2 AS ProductoReferencia2,
-					P.Tipo AS ProductoTipo,
-					Res.Ciclo,
-					Res.Medidor,
-					Med.Nombre AS MedidorNombre,
-					Res.Unidad,
-					Uni.Nombre AS UnidadNombre,
-					Res.CantidadPrincipal,
-					Res.PosicionDosificacion,
-					Res.NumCorreccion,
-					Res.Destino,
-					UbiDest.Nombre AS DestinoNombre,
-					Res.Temperatura,
-					Res.Humedad,
-					Res.Ph,
-					Res.TiempoEfectivo,
-					Res.TiempoTotal,
-					Res.KwhEfectivo,
-					Res.KWhTotal,
-					Res.IndicadorId,
-					Res.MultiDosiId,
-					Res.TotalCiclos,
-					Res.idUsuario,
-					Usu.Nombre AS UsuarioNombre,
-					Res.Editado,
-					modulo.TipoModulo AS ModuloTipo
-				FROM
-					Resultados AS Res
-				 LEFT OUTER JOIN 
-					Ubicaciones AS Ubi ON Ubi.Id = Res.Ubicacion 
-				LEFT OUTER JOIN 
-					Lotes AS L ON L.Id = Res.Lote 
-				LEFT OUTER JOIN 
-					Productos AS P ON P.Id = Res.Producto 
-				LEFT OUTER JOIN 
-					Medidores AS Med ON Med.Id = Res.Medidor 
-				LEFT OUTER JOIN 
-					Unidades AS Uni ON Uni.Id = Res.Unidad
-				 LEFT OUTER JOIN 
-					Ubicaciones AS UbiDest ON UbiDest.Id = Res.Destino
-				 LEFT OUTER JOIN 
-					Usuarios AS Usu ON Usu.Id = Res.idUsuario 
-				INNER JOIN 
-					Ordenes orden ON Res.Orden = orden.Id 
-				INNER JOIN
-					Modulos modulo ON orden.Modulo = modulo.Id
-				LEFT OUTER JOIN 
-					SalidasLinias AS SalLin ON SalLin.id = orden.LineaSalida
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ResultadosOrdenAgrupado] as
-				select r.Orden , r.IdDosificacion , r.Producto , SUM(r.cantidad) as cantidad, min(d.PosicionDosificacion  ) as posicion
-					, MIN(p.nombre) as ProductoNombre, r.Lote , min(l.Nombre ) as LoteNombre, min(p.Referencia) as RefProducto
-				from Resultados as r
-				left outer join dosificaciones as d on d.Id = r.IdDosificacion 
-				left outer join productos as p on p.id= r.producto
-				left outer join Lotes as l on l.Id= r.lote
-
-				--where r.Orden = 28895
-				group by r.Orden , r.IdDosificacion , r.Producto , r.Lote 
-				--order by min(d.posicionDosificacion)
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[ResultadosPorDiaOrden]
-				AS
-				SELECT        R.Serie, R.Orden AS IdOrden, R.Producto AS ProductoId, MIN(P.Nombre) AS NombreProducto, CONVERT(date, R.Inicio) AS fecha, ROUND(SUM(R.Cantidad), 3) AS cantidad, MIN(P.Referencia) AS RefProducto, 
-										 MIN(L.Nombre) AS Lote
-				FROM            dbo.Resultados AS R LEFT OUTER JOIN
-										 dbo.Productos AS P ON P.Id = R.Producto LEFT OUTER JOIN
-										 dbo.Ordenes AS O ON O.Id = R.Orden AND O.Serie = R.Serie LEFT OUTER JOIN
-										 dbo.Lotes AS L ON R.Lote = L.Id
-				GROUP BY R.Producto, CONVERT(date, R.Inicio), R.Orden, R.Serie, L.Id
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidaLiniasReduced]
-				AS
-
-				SELECT        
-				s.Id, 
-				p.Nombre AS NombreProducto, 
-				ROUND(s.Cantidad, 3) AS Cantidad,
-				un.Nombre AS NombreUnidad,
-				ISNULL(ROUND(s.Bultos,0),0) AS Bultos,
-				f.Nombre AS NombreFormato,
-				e.Nombre AS NombreEnvase, 
-
-				ISNULL(STUFF(Iif(s.Origen1 IS NULL, '', CONCAT('-',(SELECT u.Nombre FROM Ubicaciones u WHERE u.Id = s.Origen1))) +
-				Iif(s.Origen2 IS NULL, '', CONCAT('-', (SELECT u.Nombre FROM Ubicaciones u WHERE u.Id = s.Origen2))) +
-				Iif(s.Origen3 IS NULL, '', CONCAT('-', (SELECT u.Nombre FROM Ubicaciones u WHERE u.Id = s.Origen3))) +
-				Iif(s.Origen4 IS NULL, '', CONCAT('-', (SELECT u.Nombre FROM Ubicaciones u WHERE u.Id = s.Origen4))), 1, 1, ''), '') AS Origenes,
-
-				ISNULL(STUFF(Iif(s.Cajon1 = 1, '-C1', '') +
-				Iif(s.Cajon2 = 1, '-C2', '') +
-				Iif(s.Cajon3 = 1, '-C3', '') +
-				Iif(s.Cajon4 = 1, '-C4', '') +
-				Iif(s.Cajon5 = 1, '-C5', '') +
-				Iif(s.Cajon6 = 1, '-C6', '') + 
-				Iif(s.Cajon7 = 1, '-C7', '') + 
-				Iif(s.Cajon8 = 1, '-C8', '') + 
-				Iif(s.Cajon9 = 1, '-C9', '') + 
-				Iif(s.Cajon10 = 1, '-C10', ''), 1, 1,''),'') AS Cajones
-
-				FROM            dbo.SalidasLinias		AS s 
-				LEFT OUTER JOIN dbo.Productos	AS p	ON p.Id = s.idProducto
-				LEFT OUTER JOIN dbo.Envases		AS e	ON e.Id = s.idEnvase
-				LEFT OUTER JOIN dbo.Formatos	AS f	ON f.Id = s.idFormato
-				LEFT OUTER JOIN dbo.Unidades	AS un   ON un.Id = s.idUnidad
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasExtended]
-				AS
-					SELECT Sali.id
-					  , Sali.idSerie
-						, Serie.Nombre AS SerieNombre
-					  , Sali.Codigo
-					  , Sali.Referencia
-					  , Sali.IdDepartamento
-						, Depar.Nombre AS DepartamentoNombre
-					  , Sali.Fecha
-					  , Sali.idCliente
-						, Cli.Nombre AS ClienteNombre
-						, Cli.Referencia AS ClienteReferencia
-						, Cli.RazonSocial AS ClienteRazonSocial
-						, Cli.CIF AS ClienteCIF
-						, Cli.Direccion AS ClienteDireccion
-						, Cli.CodigoPostal AS ClienteCodigoPostal
-						, Cli.Poblacion AS ClientePoblacion
-						, Cli.Provincia AS ClienteProvincia
-							, Provi.Nombre AS ClienteProvicinaNombre
-						, Cli.Pais AS ClientePais
-							, Pais.Nombre AS ClientePaisNombre
-						, Cli.Telefono AS ClienteTelefono
-						, Cli.Inhabilitado AS ClienteInhabilitado
-							, dbo.GetTextoParametro('Clientes', 'Inhabilitado', Cli.Inhabilitado) AS ClienteInhabilitadoStr
-					  , Sali.Estado
-						, dbo.GetTextoParametro('Salidas', 'Estado', Sali.Estado) AS EstadoStr
-					  , Sali.Comentario
-					  , Sali.FechaPrevista
-					  , Sali.FInicio AS FechaInicio
-					  , Sali.FFin AS FechaFin
-					  , Sali.Precio
-					  , NULL AS IdMoneda
-						, NULL AS MonedaNombre  -- en previsión de que se añada
-						, NULL AS MonedaSimbolo  -- en previsión de que se añada
-					  , Sali.Observaciones
-				  FROM dbo.Salidas AS Sali
-					LEFT OUTER JOIN Series AS Serie ON Serie.Id = Sali.idSerie 
-					LEFT OUTER JOIN Departamentos AS Depar ON Depar.Id = Sali.IdDepartamento
-					LEFT OUTER JOIN Clientes AS Cli ON Cli.Id = Sali.IdCliente
-						LEFT OUTER JOIN Provincias AS Provi ON Provi.Id = Cli.Provincia AND Provi.Pais = Cli.Pais 
-						LEFT OUTER JOIN Paises AS Pais ON Pais.Id = Cli.Pais
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasInformeAduanas]
-				AS
-
-					SELECT 
-					sv.Numero AS Viaje,
-					s.id AS IdSalida,
-					s.FInicio AS Fecha,
-					c.Id AS IdCliente,
-					c.Nombre AS NombreCliente,
-					c.CIF AS CIFCliente,
-					sl.idProducto,
-					p.Nombre AS NombreProducto,
-					e.id AS IdEmpTransport,
-					e.Nombre AS NombreEmpTransport,
-					e.CIF AS CIFEmpTransport,
-					ch.id AS IdChofer,
-					ch.Nombre AS NombreChofer,
-					ch.CIF AS CIFChofer,
-					ROUND(SUM(r.Cantidad),0) AS Servida,
-					r.Lote AS IdLote,
-					l.Nombre AS NombreLote
-
-
-					FROM			dbo.Salidas AS				s
-					LEFT OUTER JOIN	dbo.Clientes AS				c	ON s.idCliente = c.Id 
-					LEFT OUTER JOIN	dbo.SalidasLinias AS		sl	ON sl.idSalidas = s.id 
-					LEFT OUTER JOIN	dbo.SalidasLiniasLote AS	sll ON sll.idLineaSalida = sl.id 
-					LEFT OUTER JOIN	dbo.Productos AS			p   ON sl.idProducto = p.Id 
-					LEFT OUTER JOIN	dbo.SalidasViajes AS		sv  ON sl.idviajes = sv.id 
-					LEFT OUTER JOIN dbo.EmpresasTransporte AS   e	ON sv.idEmpresaTransporte = e.id 
-					LEFT OUTER JOIN dbo.Choferes AS				ch	ON sv.idChofer = ch.id 
-					LEFT OUTER JOIN dbo.Ordenes AS				o	ON sl.idSalidas = o.Salida
-					LEFT OUTER JOIN dbo.Resultados AS			r	ON r.Orden = o.id 
-					LEFT OUTER JOIN	dbo.Lotes AS				l	ON r.Lote = l.id
-
-					GROUP BY
-					sv.Numero,
-					s.id,
-					s.FInicio,
-					c.Id,
-					c.Nombre,
-					c.CIF,
-					sl.idProducto,
-					p.Nombre,
-					r.Lote, 
-					l.Nombre,
-					sll.Cantidad,
-					e.id,
-					e.Nombre,
-					e.CIF,
-					ch.id,
-					ch.Nombre,
-					ch.CIF
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasLineasLoteExtended]
-				AS
-				 SELECT SLL.id
-					  , SLL.idLineaSalida
-					  , SLL.idLineaSalidaMedicamento
-					  , SLL.idLote
-						, L.Nombre AS LoteNombre
-						, L.Referencia AS LoteReferencia
-						, L.Producto AS LoteIdProducto  -- debería coincidir con su Lineasalida.Producto correspondiente
-							, P.Nombre AS LoteProductoNombre
-							, P.Referencia AS LoteProductoReferencia
-						, L.Caducidad AS LoteCaducidad
-					  , SLL.Cantidad
-						, NULL AS idUnidad
-						, NULL AS UnidadStr
-					  , SLL.Fecha
-				  FROM dbo.SalidasLiniasLote AS SLL
-					LEFT OUTER JOIN Lotes AS L ON L.Id = SLL.idLote
-					LEFT OUTER JOIN Productos AS P ON P.Id = L.Producto
-				  WHERE NOT (SLL.idLineaSalida IS NOT NULL AND SLL.idLineaSalidaMedicamento IS NOT NULL)  -- filtramos los resultados que tengan doble id (no permitido, sería un grave error de datos)
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasLineasResultados]
-					AS
-
-					SELECT Res.Orden
-					, SUM(Res.Cantidad) AS CantidadTotal
-					, Lot.Nombre AS LoteNombre
-					, Lot.Caducidad 
-					, Uni.Nombre AS UnidadTexto
-					FROM dbo.Resultados AS Res 
-					LEFT OUTER JOIN Lotes AS Lot ON Res.Lote = Lot.Id
-					LEFT OUTER JOIN Unidades AS Uni ON Res.Unidad = Uni.id 
-					LEFT OUTER JOIN Ubicaciones AS Ubi ON Res.Ubicacion = Ubi.Id
-					GROUP BY Res.Orden, Lot.Nombre, Lot.Caducidad, Uni.Nombre
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasLiniasMedicacionesExtended]
-				AS
-					SELECT SLM.id
-					  , SLM.idSalidaLinia
-					  , SLM.idMedicamento
-						, Medi.Nombre AS MedicamentoNombre
-						, Medi.Referencia AS MedicamentoReferencia
-				--		, Medi.Cliente AS MedicacionIdCliente  -- hay medicaciones que se pueden dar de alta específicamente para un cliente concreto
-					  , SLM.Cantidad
-					  , SLM.IdUnidad
-						, Uni.Nombre AS UnidadTexto
-					  , SLM.Bultos
-					  , SLM.idFormato
-						, Form.Nombre AS FormatoNombre
-						, Form.Descripcion AS FormatoDescripcion
-					  , SLM.idEnvase
-						, Enva.Nombre AS EnvaseNombre
-					  , SLM.PrecioUnidad
-						, NULL AS IdMonedaPrecioUnidad
-						, NULL AS MonedaPrecioUnidadStr
-					  , SLM.Estado
-						, dbo.GetTextoParametro('SalidasLiniasMedicaciones', 'Estado', SLM.Estado) AS EstadoStr
-					  , SLM.Precio
-						, NULL AS IdMonedaPrecio
-						, NULL AS MonedaPrecioStr
-					  , SLM.Fecha
-					  , SLM.idOrigen
-						, UbiOrig.Nombre AS OrigenNombre
-				  FROM dbo.SalidasLiniasMedicaciones AS SLM
-					LEFT OUTER JOIN Medicaciones AS Medi ON Medi.Id = SLM.idMedicamento
-					LEFT OUTER JOIN Ubicaciones AS UbiOrig ON UbiOrig.Id = SLM.idOrigen
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = SLM.IdUnidad
-					LEFT OUTER JOIN Envases AS Enva ON Enva.Id = SLM.IdEnvase
-					LEFT OUTER JOIN Formatos AS Form ON Form.Id = SLM.IdFormato
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasLotesServidos]
-				AS
-
-					SELECT   
-					o.Id as Orden,
-					o.Salida,
-					p.Id AS IdProducto,
-					p.Nombre AS NombreProducto, 
-					l.Id AS IdLote,
-					l.Nombre AS NombreLote,
-					SUM(r.Cantidad) AS CantidadServida,
-					un.Nombre AS NombreUnidad,
-					sl.Id AS LineaSalida,
-					l.Caducidad AS CaducidadLote
-
-					FROM            
-					 dbo.Ordenes		AS o 
-					LEFT OUTER JOIN dbo.Productos	AS p	ON p.Id = o.ProductoDestino
-					LEFT OUTER JOIN dbo.Unidades	AS un	ON un.Id = p.Unidad
-					LEFT OUTER JOIN dbo.Resultados	AS r	ON r.Orden = o.Id 
-					LEFT OUTER JOIN dbo.Lotes		AS l	ON l.Id = r.Lote 
-					LEFT OUTER JOIN dbo.SalidasLinias AS sl ON sl.Id = o.LineaSalida
-
-					WHERE l.Id IS NOT NULL
-						AND o.Salida IS NOT NULL
-		
-					GROUP BY o.Salida, 
-							 p.Id, 
-							 p.Nombre,
-							 l.Id,
-							 l.Nombre,
-							 un.Nombre,
-							 o.Id,
-							 sl.Id,
-							 l.Caducidad
-							 UNION 
-
-				   SELECT NULL, 
-				   s2.idSalidas AS Salida,
-				   s2.idProducto AS IdProducto,
-				   p.Nombre AS NombreProducto,
-				   s1.idLote AS IdLote,
-				   l.Nombre AS NombreLote,
-				   s1.Cantidad AS CantidadServida,
-				   un.Nombre AS NombreUnidad,
-				   s1.idLineaSalida AS LineaSalida,
-				   l.Caducidad AS CaducidadLote
-				   FROM SalidasLiniasLote AS s1
-				   LEFT OUTER JOIN dbo.SalidasLinias AS s2 ON s2.Id = s1.idLineaSalida
-				   LEFT OUTER JOIN dbo.Productos	AS p	ON p.Id = s2.idProducto
-				   LEFT OUTER JOIN dbo.Unidades	AS un	ON un.Id = p.Unidad
-				   LEFT OUTER JOIN dbo.Lotes AS l	ON l.Id = s1.idLote
-   
-				   --filtrem per agafar només les linies de sortida en estat finalitzat
-				   WHERE s2.Estado = 10
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[SalidasViajesExtended]
-				AS
-					SELECT SV.id
-					  , SV.idSerie
-						, Serie.Nombre AS SerieNombre
-					  , SV.Numero
-					  , SV.FechaCreacion
-					  , SV.idVehiculo
-						, ISNULL(Vehic.Matricula, SV.MatriculaCamion) AS VehiculoMatricula
-						, ISNULL(Vehic.Remolque, SV.MatriculaRemolque) AS VehiculoRemolque
-						, Vehic.Referencia AS VehiculoReferencia
-					  , SV.idChofer
-					  , ISNULL(Chof.Nombre, SV.NombreConductor) AS ChoferNombre
-					  , Chof.CIF AS ChoferCIF
-					  , SV.idTarjeta
-						, Tarj.Nombre AS TarjetaNombre
-				--      , SV.EstadoTransito  -- no se usa
-					  , SV.idEmpresaTransporte
-						, EmpTrans.Nombre AS EmpresaTransporteNombre
-						, EmpTrans.CIF AS EmpresaTransporteCIF
-						, EmpTrans.Referencia AS EmpresaTransporteReferencia
-						, EmpTrans.Direccion AS EmpresaTransporteDireccion
-						, EmpTrans.CodigoPostal AS EmpresaTransporteCodigoPostal
-						, EmpTrans.Poblacion AS EmpresaTransportePoblacion
-						, Prov.Nombre AS EmpresaTransporteProvincia
-						, EmpTrans.Telefono AS EmpresaTransporteTlf
-				--      , SV.FInicioTransito
-				--      , SV.FFinalTransito
-					  , SV.FInicioViaje AS FechaSalidaFabrica
-				--      , SV.FFinViaje  -- si hubiera control de descarga en destino o control GPS de la flota, aquí se registraría cuándo se ha finalizado el viaje
-					  , SV.Referencia
-					  , SV.FechaPrevista
-					  , SV.Estado
-						, dbo.GetTextoParametro('SalidasViajes', 'Estado', SV.Estado) AS EstadoStr
-					  , SV.Observaciones
-				  FROM dbo.SalidasViajes AS SV
-					LEFT OUTER JOIN Series AS Serie ON Serie.Id = SV.idSerie 
-					LEFT OUTER JOIN EmpresasTransporte AS EmpTrans ON EmpTrans.Id = SV.idEmpresaTransporte 
-					LEFT OUTER JOIN Vehiculos AS Vehic ON Vehic.Id = SV.IdVehiculo
-					LEFT OUTER JOIN Choferes AS Chof ON Chof.Id = SV.IdChofer
-					LEFT OUTER JOIN Tarjetas AS Tarj ON Tarj.Id = SV.idTarjeta
-					LEFT OUTER JOIN Provincias as Prov ON EmpTrans.Provincia = Prov.Id
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[StockProductoLoteCaducidad]
-				AS
-
-				SELECT 
-
-				p.Id AS idProducto, 
-				p.referencia AS Referencia, 
-				p.Referencia2 AS Referencia2, 
-				p.Nombre AS Nombre, 
-				p.Tipo AS Tipo, 
-				l.id AS idLote, 
-				l.Referencia AS ReferenciaLote, 
-				l.Nombre AS Lote, 
-				l.Caducidad AS FCaducidad, 
-				l.Fabricacion AS FFabricacion,
-				p.Familia AS Familia,
-				f.Nombre AS FamiliaNombre,
-				SUM(s.Cantidad) AS Cantidad,
-				ISNULL(ROW_NUMBER() OVER(ORDER BY l.Caducidad ASC), -1) AS RowID
-
-
-				FROM Stocks AS s 
-				LEFT OUTER JOIN dbo.Lotes AS l ON l.Id = s.Lote
-				LEFT OUTER JOIN dbo.Productos AS p ON p.Id = l.Producto
-				LEFT OUTER JOIN dbo.Familias AS f ON f.Id = p.Familia
-
-				WHERE s.Estado = 1 OR s.Estado = 2
-
-				GROUP BY p.Id, p.referencia,p.Referencia2, p.Nombre, p.Tipo, l.id, l.Referencia, l.Fabricacion, l.Nombre, l.Caducidad, p.Familia, f.Nombre
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[VentasExtended]
-				AS
-				SELECT V.id
-					  , V.idSerie
-						, S.Nombre AS SerieNombre
-						, S.Estado AS SerieEstado
-						, dbo.GetTextoParametro('Series', 'Estado', S.Estado) as SerieEstadoTexto
-					  , V.Codigo -- Número
-					  , V.Referencia
-					  , V.Departamento
-					  , V.Fecha
-					  , V.PrecioTransporte
-					  , V.idCliente
-						, Cli.Nombre AS ClienteNombre
-						, Cli.Referencia AS ClienteReferencia
-						, Cli.RazonSocial AS ClienteRazonSocial
-						, Cli.CIF AS ClienteCIF
-						, Cli.Direccion AS ClienteDireccion
-						, Cli.CodigoPostal AS ClienteCodigoPostal
-						, Cli.Poblacion AS ClientePoblacion
-						, Cli.Provincia AS ClienteProvincia
-							, Provi.Nombre AS ClienteProvicinaNombre
-						, Cli.Pais AS ClientePais
-							, PaisCli.Nombre AS ClientePaisNombre
-						, Cli.Telefono AS ClienteTelefono
-					  , V.FechaEntrega
-					  , V.idDomicilio
-						  , Domi.Nombre AS DomicilioNombre
-						  , Domi.Referencia AS DomicilioReferencia
-						  , Domi.Direccion AS DomicilioDireccion
-						  , Domi.Poblacion AS DomicilioPoblacion
-						  , Domi.Telefono AS DomicilioTelefono
-						  , Domi.CodigoPostal DomicilioCodigoPostal
-						  , Domi.Provincia AS DomicilioProvincia
-						  , Domi.Pais AS DomicilioPais
-								, PaisDomi.Nombre AS DomicilioPaisNombre
-						  , Domi.Descripcion AS DomicilioDescripcion
-						  , Domi.Simogan AS DomicilioSIMOGAN
-						  , Domi.REGA AS DomicilioREGA
-					  , V.Estado
-						, dbo.GetTextoParametro('Ventas', 'Estado', V.Estado) AS EstadoTexto
-					  , V.Comentario
-					  , V.Observaciones
-					  , V.FechaInicio
-					  , V.FechaFin
-				  FROM dbo.Ventas AS V
-					  LEFT OUTER JOIN Series AS S ON S.Id = V.idSerie
-					  LEFT OUTER JOIN Clientes AS Cli ON Cli.Id = V.IdCliente
-						LEFT OUTER JOIN Provincias AS Provi ON Provi.Id = Cli.Provincia AND Provi.Pais = Cli.Pais 
-						LEFT OUTER JOIN Paises AS PaisCli ON PaisCli.Id = Cli.Pais
-					  LEFT OUTER JOIN Domicilios AS Domi ON Domi.Id = V.idDomicilio and Domi.Cliente = V.idCliente
-						LEFT OUTER JOIN Paises AS PaisDomi ON PaisDomi.Id = Domi.Pais
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[VentasLineasExtended]
-				AS
-
-				SELECT VL.id
-					  , VL.idVentas
-					  , VL.linea
-					  , VL.idProducto
-						, P.Nombre AS ProductoNombre
-					  , VL.idFormato
-						, Form.Nombre AS FormatoNombre
-						, Form.Descripcion AS FormatoDescripcion
-					  , VL.idEnvase
-						, Enva.Nombre AS EnvaseNombre
-					  , VL.Bultos
-					  , VL.Cantidad
-					  , VL.idUnidad
-						, Uni.Nombre AS UnidadTexto
-					  , VL.idDomicilio
-						  , Domi.Cliente AS DomicilioIdCliente
-						  , Domi.Nombre AS DomicilioNombre
-						  , Domi.Referencia AS DomicilioReferencia
-						  , Domi.Direccion AS DomicilioDireccion
-						  , Domi.Poblacion AS DomicilioPoblacion
-						  , Domi.Telefono AS DomicilioTelefono
-						  , Domi.CodigoPostal DomicilioCodigoPostal
-						  , Domi.Provincia AS DomicilioProvincia
-						  , Domi.Pais AS DomicilioPais
-								, Pais.Nombre AS DomicilioPaisNombre
-						  , Domi.Inhabilitado
-							, dbo.GetTextoParametro('Domicilio', 'Inhabilitado', Domi.Inhabilitado) AS DomicilioInhabilitadoStr
-						  , Domi.Descripcion AS DomicilioDescripcion
-						  , Domi.Simogan AS DomicilioSIMOGAN
-						  , Domi.REGA AS DomicilioREGA
-				--      , VL.idMedicamento
-					  , VL.PrecioUnidad
-					  , VL.idContrato
-				--      , VL.MedCantidad
-				--      , VL.MedBultos
-				--      , VL.MedEnvase
-				--      , VL.MedUnidad
-				--      , VL.MedFormato
-				--      , VL.MedPrecioUnidad
-					  , VL.Estado
-						, dbo.GetTextoParametro('VentasLineas', 'Estado', VL.Estado) AS EstadoStr
-					  , VL.Fecha
-					  , VL.Observaciones
-					  , VL.Precio
-						, NULL AS IdMonedaPrecio
-						, NULL AS PrecioMonedaNombre
-					  , VL.PrecioTransporte
-						, NULL AS IdMonedaPrecioTransporte
-						, NULL AS PrecioTransporteMonedaNombre
-					  , VL.CampoLibre1
-					  , VL.CampoLibre2
-					  , VL.idPuntoDescarga
-						, PD.Nombre AS PuntoDescargaStr
-						, PD.Descripcion AS PuntoDescargaDescripcion
-						,STUFF((
-							SELECT DISTINCT ' - ' + pd.Nombre
-							FROM VentasLiniasPuntosDescarga AS vlpd 
-							LEFT OUTER JOIN PuntosDescarga AS pd ON vlpd.idPuntoDescarga = pd.id 
-							WHERE idLineaVenta = VL.id
-							FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS TodosPuntosDescarga
-				  FROM dbo.VentasLinias AS VL
-					LEFT OUTER JOIN Productos as P ON P.Id = VL.idProducto
-					LEFT OUTER JOIN Formatos AS Form ON Form.Id = VL.idFormato
-					LEFT OUTER JOIN Envases AS Enva ON Enva.Id = VL.idEnvase
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = VL.idUnidad
-					LEFT OUTER JOIN Domicilios AS Domi ON Domi.Id = VL.idDomicilio
-					LEFT OUTER JOIN Paises AS Pais ON Pais.Id = Domi.Pais
-					LEFT OUTER JOIN PuntosDescarga AS PD ON PD.id = VL.idPuntoDescarga
-				GO
-			");
-			migrationBuilder.Sql($@"
-				CREATE OR ALTER VIEW [dbo].[VentasLineasMedicacionesExtended]
-				AS
-				SELECT VLM.id
-					  , VLM.idVentaLinia
-					  , VLM.idEnvase
-						, Enva.Nombre AS EnvaseNombre
-					  , VLM.idFormato
-						, Form.Nombre AS FormatoNombre
-						, Form.Descripcion AS FormatoDescripcion
-					  , VLM.idMedicamento
-						, Medi.Nombre AS MedicamentoNombre
-						, Medi.Referencia AS MedicamentoReferencia
-				--		, Medi.Cliente AS MedicacionIdCliente  -- hay medicaciones que se pueden dar de alta específicamente para un cliente concreto
-							, Prod.Nombre AS MedicamentoProductoNombre
-					  , VLM.idUnidad
-						, Uni.Nombre AS UnidadTexto
-					  , VLM.Fecha
-					  , VLM.Cantidad
-					  , VLM.Bultos
-					  , VLM.Estado
-						, dbo.GetTextoParametro('VentasLiniasMedicaciones', 'Estado', VLM.Estado) AS EstadoStr
-					  , VLM.Precio
-						, NULL AS IdMonedaPrecio
-						, NULL AS MonedaPrecioStr
-					  , VLM.PrecioUnidad
-						, NULL AS IdMonedaPrecioUnidad
-						, NULL AS MonedaPrecioUnidadStr
-				  FROM dbo.VentasLiniasMedicaciones AS VLM
-					LEFT OUTER JOIN Envases AS Enva ON Enva.Id = VLM.IdEnvase
-					LEFT OUTER JOIN Formatos AS Form ON Form.Id = VLM.IdFormato
-					LEFT OUTER JOIN Medicaciones AS Medi ON Medi.Id = VLM.idMedicamento
-					LEFT OUTER JOIN Productos AS Prod ON Prod.Id = Medi.idProducto
-					LEFT OUTER JOIN Unidades AS Uni ON Uni.Id = VLM.IdUnidad
-				GO
-			");
 		}
 
 		protected override void Down(MigrationBuilder migrationBuilder)
 		{
-			migrationBuilder.Sql($@"DROP VIEW [CertificadosDesinfeccionExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [ComprasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [ComprasLineasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [ConsumidoOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [DashOrdenes]");
-			migrationBuilder.Sql($@"DROP VIEW [DashVistaStocks]");
-			migrationBuilder.Sql($@"DROP VIEW [DatosMuestraEntrada]");
-			migrationBuilder.Sql($@"DROP VIEW [DEBUG_ResultadosSinMovimientos]");
-			migrationBuilder.Sql($@"DROP VIEW [DesglosesDetalle]");
-			migrationBuilder.Sql($@"DROP VIEW [DesglosesExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [DomiciliosExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [DosificacionesDetalle]");
-			migrationBuilder.Sql($@"DROP VIEW [EntradasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [EntradasExtendedLineasEntradasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [EntradasLineasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [EntradasLineasResultadosNIRExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [EtiquetaMuestraProduccion]");
-			migrationBuilder.Sql($@"DROP VIEW [EtiquetaStock]");
-			migrationBuilder.Sql($@"DROP VIEW [ExistenciasProductoLote]");
-			migrationBuilder.Sql($@"DROP VIEW [InformeExpediciones]");
-			migrationBuilder.Sql($@"DROP VIEW [InformeExpediciones_SalidaLinea]");
-			migrationBuilder.Sql($@"DROP VIEW [InformeExpediciones_SalidaLinea_Resultado]");
-			migrationBuilder.Sql($@"DROP VIEW [LineasSalidasAgrupLoteYOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [ListaAlarmas]");
-			migrationBuilder.Sql($@"DROP VIEW [ListaDesgloses]");
-			migrationBuilder.Sql($@"DROP VIEW [ListaDosificaciones]");
-			migrationBuilder.Sql($@"DROP VIEW [ListaOrdenes]");
-			migrationBuilder.Sql($@"DROP VIEW [ListaResultados]");
-			migrationBuilder.Sql($@"DROP VIEW [LoteClienteDomicilio]");
-			migrationBuilder.Sql($@"DROP VIEW [LoteProveedor]");
-			migrationBuilder.Sql($@"DROP VIEW [LoteProveedorNOCantidad]");
-			migrationBuilder.Sql($@"DROP VIEW [LoteProveedorUnicoNOCantidad]");
-			migrationBuilder.Sql($@"DROP VIEW [OrdenesDetalle]");
-			migrationBuilder.Sql($@"DROP VIEW [PivotProduccion]");
-			migrationBuilder.Sql($@"DROP VIEW [PivotProduccionProducidos]");
-			migrationBuilder.Sql($@"DROP VIEW [ProducidoConsumidoOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [ProducidoOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [ProductoLotePrimerNivel]");
-			migrationBuilder.Sql($@"DROP VIEW [ProductoLotePrimerNivelProvCli]");
-			migrationBuilder.Sql($@"DROP VIEW [RecetasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [RecetasLineasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [recursivo]");
-			migrationBuilder.Sql($@"DROP VIEW [ResultadosDetalle]");
-			migrationBuilder.Sql($@"DROP VIEW [ResultadosExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [ResultadosOrdenAgrupado]");
-			migrationBuilder.Sql($@"DROP VIEW [ResultadosPorDiaOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidaLiniasReduced]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasInformeAduanas]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasLineasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasLineasLoteExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasLineasResultados]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasLiniasMedicacionesExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasLotesServidos]");
-			migrationBuilder.Sql($@"DROP VIEW [SalidasViajesExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [StockProductoLoteCaducidad]");
-			migrationBuilder.Sql($@"DROP VIEW [TotalCantidadPorOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [TotalProducidoPorOrden]");
-			migrationBuilder.Sql($@"DROP VIEW [VentasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [VentasLineasExtended]");
-			migrationBuilder.Sql($@"DROP VIEW [VentasLineasMedicacionesExtended]");
-
-			migrationBuilder.Sql($@"DROP PROCEDURE [AddIdOld]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [AddSerieOld]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [AlarmasTop10Modulo]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [CalculoKWVentana]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [ConsumoKWMotores]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [DashProduccion]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [DashProduccionUlt7Dias]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [EnergiaRellenoAlarmasSobreConsumo]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [GenerarIdMuestraEntrada]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [GenerarKWEnOrdenesTeoricos]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [GetNewLote]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [GrabarReadPLC]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [LimpiezaBaseDatos]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [LimpiezaBuffers]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [ListaAlarmasConsumoMotores]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [ListaClientesDeUnLote]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [NuevoContador]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [OEEDesgloses]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [OEEEstadosFechaCompleto]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [OEEEStadosFechaIntervalos]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [OEEGenerarDatosFalsos]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [OrdenesACabOrdenes]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [P_ERPProductoUbicacion]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [P_ERPStockDisponibleCargaSilo]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [Productividad]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [Productividad7Dias]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [RangoConsumoKWMotores]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [RangoConsumoKWMotoresSumas]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [RangoConsumoKWSecciones]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [RangoConsumoKWSeccionesSumas]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [spReseedUserTables]");
-			migrationBuilder.Sql($@"DROP PROCEDURE [UpdateBufferOrdenes]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [ListaStringToInt]");
-			migrationBuilder.Sql($@"DROP FUNCTION [ProductividadFechasModulo]");
-			migrationBuilder.Sql($@"DROP FUNCTION [SplitInts]");
-			migrationBuilder.Sql($@"DROP FUNCTION [TVF_TimeRange_Split_To_Grid]");
-			migrationBuilder.Sql($@"DROP FUNCTION [TVF_TimeRange_Split_To_GridSeconds]");
-			migrationBuilder.Sql($@"DROP FUNCTION [udfRankingProductosFechas]");
-			migrationBuilder.Sql($@"DROP FUNCTION [CantidadSegunTiempo]");
-			migrationBuilder.Sql($@"DROP FUNCTION [GetTextoParametro]");
-			migrationBuilder.Sql($@"DROP FUNCTION [ProductividadModuloDia]");
-			migrationBuilder.Sql($@"DROP FUNCTION [RangoFechaInicio]");
-			migrationBuilder.Sql($@"DROP FUNCTION [VerTurno]");
-			migrationBuilder.Sql($@"DROP FUNCTION [VerTurnoId]");
-
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertCertificadoDesinfeccion];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertCompras];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertEntradas];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertRecetas];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertSalidas];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertSalidasAlbaranes];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertSalidasViajes];");
-			migrationBuilder.Sql($@"DROP TRIGGER [triggerInsertVentas];");
-			migrationBuilder.Sql($@"DROP TRIGGER [Trigger_OrdenPLC];");
-			migrationBuilder.Sql($@"DROP TRIGGER [Trigger_Formulas];");
-			migrationBuilder.Sql($@"DROP TRIGGER [Trigger_Version];");
-
 			migrationBuilder.DropForeignKey(
 				name: "FK_EntradasLineas_Formatos",
 				table: "EntradasLineas");
@@ -20142,6 +14316,14 @@ namespace VMES.Database.Vmes.Migrations
 				table: "Ubicaciones");
 
 			migrationBuilder.DropForeignKey(
+				name: "FKMed_VentasLinias_Formatos",
+				table: "VentasLinias");
+
+			migrationBuilder.DropForeignKey(
+				name: "FK_VentasLinias_Formatos",
+				table: "VentasLinias");
+
+			migrationBuilder.DropForeignKey(
 				name: "FK_Modulos_Ordenes",
 				table: "Modulos");
 
@@ -20156,10 +14338,6 @@ namespace VMES.Database.Vmes.Migrations
 			migrationBuilder.DropForeignKey(
 				name: "FK_Lotes_Productos",
 				table: "Lotes");
-
-			migrationBuilder.DropForeignKey(
-				name: "FK_Medicaciones_Productos",
-				table: "Medicaciones");
 
 			migrationBuilder.DropForeignKey(
 				name: "FK_Modulos_ProdFinal",
@@ -20254,15 +14432,15 @@ namespace VMES.Database.Vmes.Migrations
 				table: "Tags");
 
 			migrationBuilder.DropForeignKey(
-				name: "FK__Basculas__OpcCon__54B68676",
+				name: "FK_Basculas_OpcConfig_OpcConfigId",
 				table: "Basculas");
 
 			migrationBuilder.DropForeignKey(
-				name: "FK__Tags__OpcConfigI__04BA9F53",
+				name: "FK_Tags_OpcConfig_OpcConfigId",
 				table: "Tags");
 
 			migrationBuilder.DropForeignKey(
-				name: "FK_Basculas_Tags",
+				name: "FK_Basculas_Tags_Tag",
 				table: "Basculas");
 
 			migrationBuilder.DropForeignKey(
@@ -20298,7 +14476,7 @@ namespace VMES.Database.Vmes.Migrations
 				name: "AlertasUsuariosInformesParametros");
 
 			migrationBuilder.DropTable(
-				name: "AnalizadoresRed");
+				name: "AuditColumns");
 
 			migrationBuilder.DropTable(
 				name: "Backups");
@@ -20361,25 +14539,19 @@ namespace VMES.Database.Vmes.Migrations
 				name: "BufferERPSolicitudRegularizacion");
 
 			migrationBuilder.DropTable(
+				name: "BufferERPSolicitudTraspaso");
+
+			migrationBuilder.DropTable(
 				name: "BufferERPStocks");
 
 			migrationBuilder.DropTable(
 				name: "BufferERPVehiculos");
 
 			migrationBuilder.DropTable(
-				name: "BufferERPVentas");
-
-			migrationBuilder.DropTable(
 				name: "BufferERPVentasLineas");
 
 			migrationBuilder.DropTable(
 				name: "BufferProducidos");
-
-			migrationBuilder.DropTable(
-				name: "Caminos");
-
-			migrationBuilder.DropTable(
-				name: "Caudales");
 
 			migrationBuilder.DropTable(
 				name: "CertificadoDesinfeccion");
@@ -20401,6 +14573,9 @@ namespace VMES.Database.Vmes.Migrations
 
 			migrationBuilder.DropTable(
 				name: "ControlesNIRProductos");
+
+			migrationBuilder.DropTable(
+				name: "Dashboards");
 
 			migrationBuilder.DropTable(
 				name: "DashboardsLib");
@@ -20449,13 +14624,6 @@ namespace VMES.Database.Vmes.Migrations
 
 			migrationBuilder.DropTable(
 				name: "FormulaProdModulo");
-
-			migrationBuilder.DropTable(
-				name: "FormulasDatosExtra");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [FormulaKWToneladaEfectivo]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [FormulaKWToneladaTotal]");
 
 			migrationBuilder.DropTable(
 				name: "GMAO_Archivos_Elementos");
@@ -20515,6 +14683,9 @@ namespace VMES.Database.Vmes.Migrations
 				name: "GruposIncompatibilidadesLineas");
 
 			migrationBuilder.DropTable(
+				name: "HumanMachineInterfaces");
+
+			migrationBuilder.DropTable(
 				name: "Incompatibilidades");
 
 			migrationBuilder.DropTable(
@@ -20548,6 +14719,9 @@ namespace VMES.Database.Vmes.Migrations
 				name: "ModulosAscendentes");
 
 			migrationBuilder.DropTable(
+				name: "ModulosEstadoComunicaciones");
+
+			migrationBuilder.DropTable(
 				name: "ModulosIncompatibilidades");
 
 			migrationBuilder.DropTable(
@@ -20566,22 +14740,13 @@ namespace VMES.Database.Vmes.Migrations
 				name: "MultiDosificaciones");
 
 			migrationBuilder.DropTable(
+				name: "NetAlarmas");
+
+			migrationBuilder.DropTable(
 				name: "NetAlarmasAutomaticasOrdenUbicaciones");
 
 			migrationBuilder.DropTable(
-				name: "OEEEstados");
-
-			migrationBuilder.DropTable(
-				name: "OEEEstadosMedidores");
-
-			migrationBuilder.DropTable(
-				name: "OEEEstadosModulos");
-
-			migrationBuilder.DropTable(
-				name: "OEEEstadosTipoLista");
-
-			migrationBuilder.DropTable(
-				name: "OEEHorarios");
+				name: "NetAlarmasTiposRespuestasOrigenes");
 
 			migrationBuilder.DropTable(
 				name: "OpcionesRoles");
@@ -20598,25 +14763,14 @@ namespace VMES.Database.Vmes.Migrations
 			migrationBuilder.DropTable(
 				name: "OrdenesAutoInicio");
 
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenKWConsumidosTotal]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenKWProducidosTotal]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenKWConsumidosEfectivo]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenKWProducidosEfectivo]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenCantidadProducida]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenKWEfectivoCantidad]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [OrdenKWTotalCantidad]");
-
 			migrationBuilder.DropTable(
 				name: "OrdenesDatosExtra");
 
 			migrationBuilder.DropTable(
 				name: "OrdenesRelacion");
+
+			migrationBuilder.DropTable(
+				name: "OrdenesTransicionEstadosHistory");
 
 			migrationBuilder.DropTable(
 				name: "Pistolas");
@@ -20625,13 +14779,13 @@ namespace VMES.Database.Vmes.Migrations
 				name: "Pivots");
 
 			migrationBuilder.DropTable(
-				name: "PLCAddonsVars");
+				name: "PrintJobs");
 
 			migrationBuilder.DropTable(
-				name: "PLCRead");
+				name: "ProductoMedidorCamino");
 
 			migrationBuilder.DropTable(
-				name: "PLCWrite");
+				name: "ProductosEnvasesEtiquetas");
 
 			migrationBuilder.DropTable(
 				name: "ProductosGruposIncompatibilidades");
@@ -20668,6 +14822,9 @@ namespace VMES.Database.Vmes.Migrations
 
 			migrationBuilder.DropTable(
 				name: "SesionesSeccion");
+
+			migrationBuilder.DropTable(
+				name: "SolicitudesAjusteCaudal");
 
 			migrationBuilder.DropTable(
 				name: "StatusDisks");
@@ -20724,17 +14881,13 @@ namespace VMES.Database.Vmes.Migrations
 				name: "VentasLiniasPuntosDescarga");
 
 			migrationBuilder.DropTable(
-				name: "VersionDatosExtra");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [VersionKWToneladaEfectivo]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [VersionKWToneladaTotal]");
-
-			migrationBuilder.DropTable(
 				name: "VersionTPrevisto");
 
 			migrationBuilder.DropTable(
 				name: "AlertasUsuariosInformes");
+
+			migrationBuilder.DropTable(
+				name: "AuditTables");
 
 			migrationBuilder.DropTable(
 				name: "BufferERPClientesDomicilios");
@@ -20755,7 +14908,7 @@ namespace VMES.Database.Vmes.Migrations
 				name: "BufferERPSalidasLinMedicamentos");
 
 			migrationBuilder.DropTable(
-				name: "CompActivosLista");
+				name: "BufferERPVentas");
 
 			migrationBuilder.DropTable(
 				name: "DashboardsLibCategorias");
@@ -20791,6 +14944,9 @@ namespace VMES.Database.Vmes.Migrations
 				name: "GMAO_ElemIntervenciones");
 
 			migrationBuilder.DropTable(
+				name: "GMAO_ElementReviewTasks");
+
+			migrationBuilder.DropTable(
 				name: "GMAO_ElemStocks");
 
 			migrationBuilder.DropTable(
@@ -20806,19 +14962,19 @@ namespace VMES.Database.Vmes.Migrations
 				name: "MotoresGrupos");
 
 			migrationBuilder.DropTable(
+				name: "SeccionesGrupos");
+
+			migrationBuilder.DropTable(
+				name: "Dosificaciones");
+
+			migrationBuilder.DropTable(
 				name: "NetAlarmasAutomaticas");
-
-			migrationBuilder.DropTable(
-				name: "NetAlarmas");
-
-			migrationBuilder.DropTable(
-				name: "Turnos");
 
 			migrationBuilder.DropTable(
 				name: "Opciones");
 
 			migrationBuilder.DropTable(
-				name: "PLCAddons");
+				name: "Caminos");
 
 			migrationBuilder.DropTable(
 				name: "GruposIncompatibilidades");
@@ -20830,21 +14986,25 @@ namespace VMES.Database.Vmes.Migrations
 				name: "ControlesNIR");
 
 			migrationBuilder.DropTable(
-				name: "Stocks");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [EnvasesDeStock]");
+				name: "Secciones");
 
 			migrationBuilder.DropTable(
-				name: "Variables");
+				name: "Caudales");
 
 			migrationBuilder.DropTable(
 				name: "SalidasLiniasMedicaciones");
 
 			migrationBuilder.DropTable(
-				name: "VentasLinias");
+				name: "Stocks");
+
+			migrationBuilder.DropTable(
+				name: "Variables");
 
 			migrationBuilder.DropTable(
 				name: "AlertasUsuarios");
+
+			migrationBuilder.DropTable(
+				name: "Audits");
 
 			migrationBuilder.DropTable(
 				name: "BufferERPClientes");
@@ -20871,28 +15031,25 @@ namespace VMES.Database.Vmes.Migrations
 				name: "GMAO_ComprasLineas");
 
 			migrationBuilder.DropTable(
+				name: "Printers");
+
+			migrationBuilder.DropTable(
 				name: "InformesLibCategorias");
+
+			migrationBuilder.DropTable(
+				name: "OperMotores");
+
+			migrationBuilder.DropTable(
+				name: "TempControles");
+
+			migrationBuilder.DropTable(
+				name: "MedidoresDosificaciones");
 
 			migrationBuilder.DropTable(
 				name: "NetAlarmasTiposRespuestas");
 
 			migrationBuilder.DropTable(
-				name: "SeccionesGrupos");
-
-			migrationBuilder.DropTable(
-				name: "Secciones");
-
-			migrationBuilder.DropTable(
-				name: "Dosificaciones");
-
-			migrationBuilder.DropTable(
 				name: "Veterinarios");
-
-			migrationBuilder.DropTable(
-				name: "Contratos");
-
-			migrationBuilder.DropTable(
-				name: "Ventas");
 
 			migrationBuilder.DropTable(
 				name: "AlertasSmtpConfigs");
@@ -20913,19 +15070,16 @@ namespace VMES.Database.Vmes.Migrations
 				name: "GMAO_Elementos");
 
 			migrationBuilder.DropTable(
+				name: "OperAcciones");
+
+			migrationBuilder.DropTable(
+				name: "Origenes");
+
+			migrationBuilder.DropTable(
 				name: "NetAlarmasRespuestas");
 
 			migrationBuilder.DropTable(
 				name: "NetAlarmasTipos");
-
-			migrationBuilder.DropTable(
-				name: "OperMotores");
-
-			migrationBuilder.DropTable(
-				name: "TempControles");
-
-			migrationBuilder.DropTable(
-				name: "MedidoresDosificaciones");
 
 			migrationBuilder.DropTable(
 				name: "Empresas");
@@ -20946,12 +15100,6 @@ namespace VMES.Database.Vmes.Migrations
 				name: "Usuarios");
 
 			migrationBuilder.DropTable(
-				name: "OperAcciones");
-
-			migrationBuilder.DropTable(
-				name: "Origenes");
-
-			migrationBuilder.DropTable(
 				name: "GMAO_Marcas");
 
 			migrationBuilder.DropTable(
@@ -20967,7 +15115,16 @@ namespace VMES.Database.Vmes.Migrations
 				name: "CabOrdenes");
 
 			migrationBuilder.DropTable(
+				name: "VentasLinias");
+
+			migrationBuilder.DropTable(
 				name: "Versiones");
+
+			migrationBuilder.DropTable(
+				name: "Contratos");
+
+			migrationBuilder.DropTable(
+				name: "Ventas");
 
 			migrationBuilder.DropTable(
 				name: "Formulas");
@@ -20996,10 +15153,6 @@ namespace VMES.Database.Vmes.Migrations
 			migrationBuilder.DropTable(
 				name: "Ubicaciones");
 
-			migrationBuilder.Sql($@"DROP FUNCTION [StockEnUbicacion]");
-
-			migrationBuilder.Sql($@"DROP FUNCTION [LoteEnUbicacion]");
-
 			migrationBuilder.DropTable(
 				name: "Sesiones");
 
@@ -21008,9 +15161,6 @@ namespace VMES.Database.Vmes.Migrations
 
 			migrationBuilder.DropTable(
 				name: "Modulos");
-
-			migrationBuilder.DropTable(
-				name: "OEEEstadosTipo");
 
 			migrationBuilder.DropTable(
 				name: "UsuariosRoles");
@@ -21035,12 +15185,6 @@ namespace VMES.Database.Vmes.Migrations
 
 			migrationBuilder.DropTable(
 				name: "Lotes");
-
-			migrationBuilder.DropTable(
-				name: "Medicaciones");
-
-			migrationBuilder.DropTable(
-				name: "Afecciones");
 
 			migrationBuilder.DropTable(
 				name: "Entradas");
@@ -21070,6 +15214,9 @@ namespace VMES.Database.Vmes.Migrations
 				name: "ProveedoresOrigenes");
 
 			migrationBuilder.DropTable(
+				name: "Medicaciones");
+
+			migrationBuilder.DropTable(
 				name: "SalidasAlbaranes");
 
 			migrationBuilder.DropTable(
@@ -21086,6 +15233,9 @@ namespace VMES.Database.Vmes.Migrations
 
 			migrationBuilder.DropTable(
 				name: "Proveedores");
+
+			migrationBuilder.DropTable(
+				name: "Afecciones");
 
 			migrationBuilder.DropTable(
 				name: "Domicilios");

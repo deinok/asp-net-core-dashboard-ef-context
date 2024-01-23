@@ -3062,20 +3062,6 @@ namespace VMES.Database.Vmes
 #endif
 			});
 
-			modelBuilder.Entity<RecetasLineas>(entityTypeBuilder =>
-			{
-				entityTypeBuilder.HasOne(x => x.ProductoNavigation)
-					.WithMany(x => x.RecetasLineas)
-					.HasForeignKey(x => x.ProductoId)
-					.OnDelete(DeleteBehavior.SetNull)
-					.HasConstraintName("FK_RecetasLineas_Productos");
-				entityTypeBuilder.HasOne(x => x.idRecetaNavigation)
-					.WithMany(x => x.RecetasLineas)
-					.HasForeignKey(x => x.idReceta)
-					.OnDelete(DeleteBehavior.Cascade)
-					.HasConstraintName("FK_RecetasLineas_Recetas");
-			});
-
 			modelBuilder.Entity<Regularizaciones>(entityTypeBuilder =>
 			{
 				entityTypeBuilder.HasOne(x => x.EnvaseNavigation)
